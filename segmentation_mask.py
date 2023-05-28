@@ -1,74 +1,71 @@
-#  Beginning with the contents of the detected bounding box (a), 
-#  we convert to grayscale and apply adaptive thresholding (b), 
-#  perform morphological closing (c) 
-#  and dilating (d), 
-#  flood filling (e), 
-#  and retain only the largest polygon (f ). 
-# -------------------------------------------------------------------------------------------
-
-import sys
 import cv2
 import numpy as np
 from matplotlib import pyplot as plt
+from scipy import ndimage
+from skimage import measure
+
+class SegmentationMask():
+    def __init__(self, image_name, isBlur=True, isShowResult=False):
+        self.img_ori = cv2.imread(image_name)
+        self.img = cv2.cvtColor(self.img_ori, cv2.COLOR_BGR2GRAY)
+        if isBlur:
+            self.img = cv2.medianBlur(self.img, 5)
+        self.isShowResult = isShowResult
+
+    def _adaptive_thresh(self, img, blockSize=11, tolerance=10):
+        return cv2.adaptiveThreshold(img, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY_INV, blockSize, tolerance)
+
+    def _closing(self, img, kernelSize=13):
+        kernel = np.ones((kernelSize, kernelSize),dtype=np.uint8)
+        return cv2.morphologyEx(img, cv2.MORPH_CLOSE, kernel)
+    
+    def _dilation(self, img, kernelSize=11, iterations=1):
+        kernel = np.ones((kernelSize, kernelSize), np.uint8)
+        return cv2.dilate(img, kernel, iterations=iterations)
+    
+    def _flood_filling(self, img):
+        binary_mask = np.where(img == 255, 1, 0) # turn uint8 into binary first
+        return ndimage.binary_fill_holes(binary_mask).astype(np.uint8)
+    
+    def _retain_largest_polygon(self, mask):        
+        region = measure.label(mask)
+        total_regions = np.max(region)
+
+        largest_region_area = 0
+        largest_region_label = 0
+        for i in range(1, total_regions+1):
+            area = np.sum(np.where(region == i, 1, 0))
+            if area > largest_region_area:
+                largest_region_area = area
+                largest_region_label = i
+
+        return np.where(region == largest_region_label, 1, 0)
+    
+    def show_result(self, ):
+        mask3d = np.repeat(self.mask[:, :, np.newaxis], 3, axis=2)
+        result = mask3d * self.img_ori
+        plt.imshow(result)
+        plt.show()
+
+    
+    def get_segmentation_mask(self, ):
+        '''
+        main function here
+        '''
+        self.img = self._adaptive_thresh(self.img)
+        self.img = self._closing(self.img)
+        self.img = self._dilation(self.img)
+        self.mask = self._flood_filling(self.img)
+        self.mask = self._retain_largest_polygon(self.mask)
+        if self.isShowResult:
+            self.show_result()
+        return self.mask
 
 
-# input
-ip = "dragon_cat.jpg"
-# ip = 'bear.jpg'
-img = cv2.imread(ip)
-m,n=img.shape[:2]
+if __name__ == "__main__":
+    # dry run here:
+    ip = "drawing_data/dragon_cat.jpg"
+    # ip = 'drawing_data/bear.jpg'
 
-# smooth the input img if the background is complex (if necessary)
-
-# BGR to grayscale
-img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-
-# gaussian blur to denoise
-img = cv2.medianBlur(img, 5)
-
-# adaptive binary thresholding
-ret, th = cv2.threshold(img, 127, 255, cv2.THRESH_BINARY)
-# img_mean = cv2.adaptiveThreshold(img, 255, cv2.ADAPTIVE_THRESH_MEAN_C, cv2.THRESH_BINARY, 11, 2)
-img_th = cv2.adaptiveThreshold(img, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY, 11, 2)
-
-cv2.imwrite('./thresh_result.jpg', img_th)
-
-# closing 
-kernel = np.ones((2,2),dtype=np.uint8)
-closing = cv2.morphologyEx(img_th, cv2.MORPH_CLOSE, kernel)
-
-cv2.imwrite('./closing_result.jpg', closing)
-
-# # dilating
-# dilating = cv2.dilate(closing, None)
-
-# cv2.imwrite('./dilating_result.jpg', dilating)
-
-
-#--------retain the largest polygan--------------------
-# pre-process for finding contours (considered image boundary)
-closing = 255 - closing
-
-# contours
-contours, hierarchy = cv2.findContours(closing, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)
-
-# find max contour
-areas = [cv2.contourArea(cnt) for cnt in contours]
-max_idx = np.argmax(areas)
-# print(max_idx)
-# print(hierarchy)
-
-# mask
-mask = cv2.drawContours(closing, contours, max_idx, 255, thickness=cv2.FILLED)
-# mask = 255 - mask
-
-cv2.imwrite('./mask_result.jpg', mask)
-
-
-# flood filling
-# mask = np.zeros([m+2,n+2],np.uint8)
-# ret, mask = cv2.threshold(closing, 1, 255, cv2.THRESH_BINARY)
-# cv2.floodFill(mask, mask, seedPoint=(round(m/2),round(n/2)), newVal=255)
-
-
-# cv2.imwrite('./floodfill_result.jpg', mask)
+    segmentationMask = SegmentationMask(image_name=ip, isShowResult=True)
+    result = segmentationMask.get_segmentation_mask()
