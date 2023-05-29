@@ -19,6 +19,8 @@ steps:
     3. sampling the inline keypoint
     4. delaunay triangles
     5. drawing
+
+Delaunay documents: https://docs.scipy.org/doc/scipy/reference/generated/scipy.spatial.Delaunay.html
 """
 
 class DelaunayTriangles:
@@ -125,11 +127,19 @@ class DelaunayTriangles:
                 i, j = polygon(tri_vertices[:,1], tri_vertices[:,0], self.img_ori.shape)
                 color = np.mean(self.img_ori[i,j], axis = 0)
                 self.tri_color.append(color.astype(np.uint8))
-        self.tri.simplices = tri_in_mask
+        self.tri.simplices = np.array(tri_in_mask)
         if self.isShowResult:
             self.show_result()
         return self.tri
-    
+    def vertex_to_simplex(self):
+        self._vertex_to_simplex = np.ones((self.SegMask.shape), dtype=np.int32)*(-1)
+        for idx, triangle in tqdm(enumerate(self.tri.simplices)):
+            tri_vertices = self._keypnts[triangle]
+            tri_vertices = np.array([tri_vertices[0:, 1], tri_vertices[0:,0]], dtype=np.int32).T 
+            i, j = polygon(tri_vertices[:,1], tri_vertices[:,0], self.SegMask.shape)
+            self._vertex_to_simplex[i,j] = idx
+        return self._vertex_to_simplex
+
     def __getitem__(self, val):
         return {
             "triangle": self._keypnts[self.tri.simplices[val]],
@@ -141,5 +151,21 @@ if __name__ == "__main__":
     name = "bear"
     img_path = f"drawing_data/{name}.jpg"
     sk_path = f"drawing_data/{name}_skeleton.npy"
-    delaunay = DelaunayTriangles(img_path,)
-    delaunay.get_delaunay_triangles()
+    delaunay = DelaunayTriangles(img_path, sk_path, True)
+    # examples of how to access information from delaunay
+    # get class Delaunay()
+    tri = delaunay.get_delaunay_triangles() 
+    # get the first triangle of Delaunay, the output is [idx, idx, idx],
+    tri0 = tri.simplices[0] 
+    # you can access the coordinate by:
+    # method1:
+    idx0 = tri.points[tri0]
+    # method2:  the customized __getitem__ 
+    idx0 = delaunay[0]["triangle"]  
+    # get neighbors
+    nei0 = tri.neighbors[0]  # the output form is also [idx, idx, idx]
+    # you can query what simplex a vertex is by lookup table
+    # i have tried lut by Delaunay, but it dont work. Thus it is made by myself, time consuming.
+    p_query = np.mean(idx0, axis=0).astype(int)
+    lut_vertex2simplex = delaunay.vertex_to_simplex()
+    print(lut_vertex2simplex[tuple(p_query)])
