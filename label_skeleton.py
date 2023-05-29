@@ -129,5 +129,5 @@ if __name__ == '__main__':
     '''
     to load the skeleton.npy ONLY:
     '''
-    skeleton_pts = np.load(npy_path="drawing_data/dragon_cat_skeleton.npy") # a [15, 2] size numpy array
-   
+    skeleton_pts = np.load("drawing_data/dragon_cat_skeleton.npy") # a [15, 2] size numpy array
+    print(skeleton_pts)
