@@ -9,6 +9,7 @@ from skimage.draw import polygon
 from skimage.feature import corner_harris, corner_peaks
 from skimage.measure import approximate_polygon
 
+
 """
 steps:
     1. outline keypoint: get poly contour by skimage.measure.approximate_polygon(contours, tolerance)
@@ -21,13 +22,16 @@ steps:
 """
 
 class DelaunayTriangles:
-    def __init__(self, img_path, isShowResult=True):
+    def __init__(self, img_path, skeleton_path="", isShowResult=True, ):
         self.img_ori = cv2.imread(img_path)
         self.img_path = img_path
         segmentationMask = SegmentationMask(image_name = img_path, isShowResult=False)
         self.SegMask = segmentationMask.get_segmentation_mask()
         self.isShowResult = isShowResult
-        
+        if skeleton_path != "":
+            self.skeleton_pts = np.load(skeleton_path)
+        else:
+            self.skeleton_pts = np.zeros((0,2))
     def _get_polygon_contour_from_mask(self, tol=0.02):
         """
             outline keypoint, if tolerance up, the keypoint will be less, vise versa.
@@ -74,7 +78,7 @@ class DelaunayTriangles:
                 edges: sampling
         """
         edge_pnts_sampling = self._edge_pnts[np.random.choice(self._edge_pnts.shape[0], size=self._edge_pnts.shape[0]//sampling, replace=False)]
-        return np.concatenate((edge_pnts_sampling, self._corner_pnts, self._polygon_border), axis=0)
+        return np.concatenate((edge_pnts_sampling, self._corner_pnts, self._polygon_border, self.skeleton_pts), axis=0)
     
     def _tri_in_mask(self, triangle):
         """
@@ -84,7 +88,7 @@ class DelaunayTriangles:
         tri_vertices = self._keypnts[triangle]
         centroid = (np.sum(tri_vertices, axis=0)//3) 
         centroid_4_dots = np.array([[centroid[0], centroid[0], centroid[0]+1, centroid[0]+1], \
-                                [centroid[1], centroid[1]+1, centroid[1], centroid[1]+1]])
+                                [centroid[1], centroid[1]+1, centroid[1], centroid[1]+1]]).astype(int)
         return np.all(self.SegMask[centroid_4_dots[0], centroid_4_dots[1]] == True)
         
     def show_result(self,):
@@ -134,6 +138,8 @@ class DelaunayTriangles:
 
 if __name__ == "__main__":
     # img_path = "drawing_data/dragon_cat.jpg"
-    img_path = "drawing_data/bear.jpg"
-    delaunay = DelaunayTriangles(img_path)
+    name = "bear"
+    img_path = f"drawing_data/{name}.jpg"
+    sk_path = f"drawing_data/{name}_skeleton.npy"
+    delaunay = DelaunayTriangles(img_path,)
     delaunay.get_delaunay_triangles()
