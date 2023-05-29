@@ -19,14 +19,13 @@ steps:
     4. delaunay triangles
     5. drawing
 """
+
 class DelaunayTriangles:
     def __init__(self, img_path, isShowResult=True):
         self.img_ori = cv2.imread(img_path)
         self.img_path = img_path
-        
         segmentationMask = SegmentationMask(image_name = img_path, isShowResult=False)
         self.SegMask = segmentationMask.get_segmentation_mask()
-        
         self.isShowResult = isShowResult
         
     def _get_polygon_contour_from_mask(self, tol=0.02):
@@ -46,7 +45,6 @@ class DelaunayTriangles:
             steps: 1. do erosion first.
         """
         gray = cv2.cvtColor(self.img_ori, cv2.COLOR_RGB2GRAY)
-        
         return corner_peaks(corner_harris(gray*self._erosed_mask), min_distance=min_dist, threshold_rel=th_rel) 
     
     def _get_edge_pnts(self, cannyth1=30, cannyth2=50):
@@ -55,13 +53,15 @@ class DelaunayTriangles:
         """
         gray = cv2.cvtColor(self.img_ori, cv2.COLOR_RGB2GRAY)
         blurred = cv2.GaussianBlur(gray, (5,5), 1)
-
-        edges = cv2.Canny(blurred, threshold1 = 30, threshold2 = 50)    # add edge points
+        edges = cv2.Canny(blurred, threshold1 = cannyth1, threshold2 = cannyth2)    # add edge points
         edges = edges * self._erosed_mask    # only the edges at edge block will preserve
         edges[self._corner_pnts] = 0
         return np.array(np.where(edges>0)).T
 
     def _get_erosed_mask(self, kernelSize=(5,5), iterations=3):
+        """
+            used for edge and corner finding. To avoid duplicated keypoints 
+        """
         kernel = np.ones(kernelSize, dtype= np.uint8)
         erosed_mask = cv2.erode(self.SegMask.astype(np.uint8), kernel, iterations=iterations)
         return np.where(erosed_mask > 0, True, False)
@@ -77,8 +77,11 @@ class DelaunayTriangles:
         return np.concatenate((edge_pnts_sampling, self._corner_pnts, self._polygon_border), axis=0)
     
     def _tri_in_mask(self, triangle):
+        """
+            to check if the triangle is in the mask.
+            if it is in the mask, the centroid will be in the mask too, else not
+        """
         tri_vertices = self._keypnts[triangle]
-
         centroid = (np.sum(tri_vertices, axis=0)//3) 
         centroid_4_dots = np.array([[centroid[0], centroid[0], centroid[0]+1, centroid[0]+1], \
                                 [centroid[1], centroid[1]+1, centroid[1], centroid[1]+1]])
@@ -86,7 +89,6 @@ class DelaunayTriangles:
         
     def show_result(self,):
         tri_color = np.zeros(self.img_ori.shape, dtype=np.uint8)
-        
         for idx, triangle in (enumerate(self.tri.simplices)):
             tri_vertices = self._keypnts[triangle]
             tri_vertices = np.array([tri_vertices[0:, 1], tri_vertices[0:,0]], dtype=np.int32).T
@@ -107,7 +109,6 @@ class DelaunayTriangles:
         self._keypnts = self._get_keypnts()
 
         self.tri = Delaunay(self._keypnts)
-
         tri_in_mask = []
         self.tri_color = []
 
@@ -136,5 +137,3 @@ if __name__ == "__main__":
     img_path = "drawing_data/bear.jpg"
     delaunay = DelaunayTriangles(img_path)
     delaunay.get_delaunay_triangles()
-    # print(delaunay[1])
-    # print(delaunay._get_contour_from_mask())
