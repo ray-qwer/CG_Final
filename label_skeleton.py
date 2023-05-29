@@ -72,7 +72,6 @@ class LabelingGUI:
 
             self.labeled_points_array = np.array(labeled_points)[:, 1:]
             np.save(f"{self.image_name}_skeleton", self.labeled_points_array)
-            np.savetxt("label_points.csv", self.labeled_points_array, delimiter=",")
             print("Label points saved successfully!")
         else:
             print("Please label exactly 15 points before saving.")
@@ -108,15 +107,14 @@ class LabelingGUI:
 
 
 if __name__ == '__main__':
-    image_path = "drawing_data/dragon_cat.jpg"  
-    # image_path = "drawing_data/bear.jpg" 
+    # image_path = "drawing_data/dragon_cat.jpg"  
+    image_path = "drawing_data/bear.jpg" 
     root = tk.Tk()
     gui = LabelingGUI(root, image_path)
     root.mainloop()
 
     '''
     # to obtain the [15, 2] size numpy array after manually label:
-    
     pts = gui.get_labels()
     gui.check_skeletal()
     '''
@@ -124,8 +122,8 @@ if __name__ == '__main__':
     '''
     # to load the previously labeled [15, 2] size numpy array, without manually label again:
     '''
-    gui.check_skeletal(npy_path="drawing_data/dragon_cat_skeleton.npy")
-    # gui.check_skeletal(npy_path="drawing_data/bear_skeleton.npy")
+    # gui.check_skeletal(npy_path="drawing_data/dragon_cat_skeleton.npy")
+    gui.check_skeletal(npy_path="drawing_data/bear_skeleton.npy")
 
 
     '''
