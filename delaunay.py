@@ -5,118 +5,136 @@ import random
 from segmentation_mask import SegmentationMask
 import cv2
 from tqdm import tqdm
-from skimage.draw import polygon2mask, polygon
-from skimage.feature import corner_harris, corner_peaks, corner_shi_tomasi
+from skimage.draw import polygon
+from skimage.feature import corner_harris, corner_peaks
+from skimage.measure import approximate_polygon
 
-# try numba for speeding up maybe?
+"""
+steps:
+    1. outline keypoint: get poly contour by skimage.measure.approximate_polygon(contours, tolerance)
+        tolerance is a hyperparameters, contour can be obtained by _get_contour_from_mask
+    2. inline keypoint: edge and corner point
+        before we get the inline keypoint, do erosion first to avoid duplicate keypoint with outline keypoint
+    3. sampling the inline keypoint
+    4. delaunay triangles
+    5. drawing
+"""
+class DelaunayTriangles:
+    def __init__(self, img_path, isShowResult=True):
+        self.img_ori = cv2.imread(img_path)
+        self.img_path = img_path
+        
+        segmentationMask = SegmentationMask(image_name = img_path, isShowResult=False)
+        self.SegMask = segmentationMask.get_segmentation_mask()
+        
+        self.isShowResult = isShowResult
+        
+    def _get_polygon_contour_from_mask(self, tol=0.02):
+        """
+            outline keypoint, if tolerance up, the keypoint will be less, vise versa.
+            parameters: 
+                1. tolerance: the tolerance of polygon approximate
+        """
+        contours, _ =  cv2.findContours(self.SegMask.astype(np.uint8), cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+        _contour_tmp = approximate_polygon(contours[0].squeeze(), tolerance=tol)
+        return np.array([_contour_tmp[:,1],_contour_tmp[:,0]],dtype=np.int32).T
+    
+    def _get_corner_pnts(self, min_dist=20, th_rel=0.00005):         # adaptive choosing: min_distance, threshold_rel
+        # gray scale the image
+        """
+            innter keypoints
+            steps: 1. do erosion first.
+        """
+        gray = cv2.cvtColor(self.img_ori, cv2.COLOR_RGB2GRAY)
+        
+        return corner_peaks(corner_harris(gray*self._erosed_mask), min_distance=min_dist, threshold_rel=th_rel) 
+    
+    def _get_edge_pnts(self, cannyth1=30, cannyth2=50):
+        """
+            Warning: This edge pnts dont contain corner
+        """
+        gray = cv2.cvtColor(self.img_ori, cv2.COLOR_RGB2GRAY)
+        blurred = cv2.GaussianBlur(gray, (5,5), 1)
 
-ip = "drawing_data/dragon_cat.jpg"
-ip = "drawing_data/bear.jpg"
+        edges = cv2.Canny(blurred, threshold1 = 30, threshold2 = 50)    # add edge points
+        edges = edges * self._erosed_mask    # only the edges at edge block will preserve
+        edges[self._corner_pnts] = 0
+        return np.array(np.where(edges>0)).T
 
-# create a mask
-segmentationMask = SegmentationMask(image_name=ip, isShowResult=False)
-mask = segmentationMask.get_segmentation_mask()
-img = cv2.imread(ip)
+    def _get_erosed_mask(self, kernelSize=(5,5), iterations=3):
+        kernel = np.ones(kernelSize, dtype= np.uint8)
+        erosed_mask = cv2.erode(self.SegMask.astype(np.uint8), kernel, iterations=iterations)
+        return np.where(erosed_mask > 0, True, False)
+    
+    def _get_keypnts(self, sampling=5):
+        """
+            outline: dont move
+            inline: 
+                corner: dont move
+                edges: sampling
+        """
+        edge_pnts_sampling = self._edge_pnts[np.random.choice(self._edge_pnts.shape[0], size=self._edge_pnts.shape[0]//sampling, replace=False)]
+        return np.concatenate((edge_pnts_sampling, self._corner_pnts, self._polygon_border), axis=0)
+    
+    def _tri_in_mask(self, triangle):
+        tri_vertices = self._keypnts[triangle]
 
-# get contour from mask
-img_shape = img.shape
-tmp_mask_width_choosing = np.arange(img_shape[1]-1)
-tmp_mask_height_choosing = np.arange(img_shape[0]-1)
-mask_down_shift = np.vstack((mask[0],mask[tmp_mask_height_choosing]))
-mask_up_shift = np.vstack((mask[tmp_mask_height_choosing+1],mask[-1]))
-mask_left_shift = np.hstack((np.expand_dims(mask[:,0], axis=1), mask[:,tmp_mask_width_choosing]))
-mask_right_shift = np.hstack((mask[:,tmp_mask_width_choosing+1],np.expand_dims(mask[:,-1], axis=1)))
-mask_border = (mask ^ mask_down_shift) |      \
-              (mask ^ mask_up_shift)   |     \
-              (mask ^ mask_right_shift)|      \
-              (mask ^ mask_left_shift) &       \
-              mask
-
-# gray scale
-gray = cv2.cvtColor(img, cv2.COLOR_RGB2GRAY)
-
-# corners
-corners = corner_peaks(corner_harris(gray*mask), min_distance=20, threshold_rel=0.00005)
-for corner in corners:
-    y, x = corner
-    cv2.circle(img, (x, y), radius=3, color=(0, 255, 0), thickness=-1)
-
-# bwlabel
-# cv2.connectedComponent
-
-# Display the image with corners
-cv2.imshow('Image with Corners', img)
-cv2.waitKey(0)
-cv2.destroyAllWindows()
-
-# get edge in the image
-blurred = cv2.GaussianBlur(gray, (5,5), 1)
-
-edges = cv2.Canny(blurred, threshold1 = 30, threshold2 = 50)    # add edge points
-edges = edges * mask    # only the edges at edge block will preserve
-
-# plt.subplot(121), plt.imshow(cv2.cvtColor(img, cv2.COLOR_BGR2RGB))
-# plt.subplot(122), plt.imshow(edges, cmap="gray")
-# plt.show()
-edges[np.where(edges > 0)] = True
-
-indice_candidate = edges | mask_border
-
-indice = np.array(np.where(indice_candidate == True))
-border_dots = random.sample(list(range(indice.shape[1])), indice.shape[1]//100)  # hyper parameter
-border_dots = (indice.T)[border_dots]
-
-print(border_dots.shape)
-print(corners.shape)
-dots = np.concatenate((border_dots, corners), axis =0)
-
-
-tri_in_mask = []
-tri_in_mask_color = []
-
-tri = Delaunay(dots)
-
-# print(tri_mask.shape)
-# To check the triangle is in the mask: by testing the centroid.
-# if the centroid is outside the mask, then ignore it, else append it.
-tri_color = np.zeros(img.shape, dtype=np.uint8)
-
-tri_count = 1
-for triangle in tqdm(tri.simplices):
-    tri_vertices = dots[triangle]
-
-    # calculate centroid of triangle
-    centroid =(np.sum(tri_vertices, axis=0)//3)
-    centroid_4_dots = np.array([[centroid[0], centroid[0], centroid[0]+1, centroid[0]+1], \
+        centroid = (np.sum(tri_vertices, axis=0)//3) 
+        centroid_4_dots = np.array([[centroid[0], centroid[0], centroid[0]+1, centroid[0]+1], \
                                 [centroid[1], centroid[1]+1, centroid[1], centroid[1]+1]])
-    
-    if np.any(mask[centroid_4_dots[0], centroid_4_dots[1]] == False):
-        continue
-    else: 
-        tri_in_mask.append(triangle)
-        tri_vertices = np.array([tri_vertices[0:, 1], tri_vertices[0:,0]], dtype=np.int32).T
-        i, j = polygon(tri_vertices[:,1], tri_vertices[:,0], tri_color.shape)
-        color = np.mean(img[i,j], axis = 0)
-        tri_color[i, j] = color
-        tri_in_mask_color.append(color)
+        return np.all(self.SegMask[centroid_4_dots[0], centroid_4_dots[1]] == True)
         
-
+    def show_result(self,):
+        tri_color = np.zeros(self.img_ori.shape, dtype=np.uint8)
         
+        for idx, triangle in (enumerate(self.tri.simplices)):
+            tri_vertices = self._keypnts[triangle]
+            tri_vertices = np.array([tri_vertices[0:, 1], tri_vertices[0:,0]], dtype=np.int32).T
+            i, j = polygon(tri_vertices[:,1], tri_vertices[:,0], self.img_ori.shape)
+            tri_color[i, j] = self.tri_color[idx]
+        plt.imshow(tri_color)
+        plt.scatter(self._keypnts[:,1], self._keypnts[:,0],c="r",s=0.1)
+        plt.show()
 
-tri.simplices = tri_in_mask
+    def get_delaunay_triangles(self):
+        """
+            main function
+        """
+        self._polygon_border = self._get_polygon_contour_from_mask(10)   # return matrix as large as h*w, dtype=bool. True if the pixel is border
+        self._erosed_mask = self._get_erosed_mask(kernelSize=5, iterations=3)
+        self._corner_pnts = self._get_corner_pnts()         # return (n, 2), n is the detected corners 
+        self._edge_pnts = self._get_edge_pnts()
+        self._keypnts = self._get_keypnts()
 
-# tri_image = np.zeros(img.shape)
-# for i in tqdm(range(1, tri_count+1)):
-#     tri_area = np.where(tri_mask == i)
-#     if tri_area[0].shape == (0,):
-#         continue
-#     tri_color = np.mean(img[tri_area], axis=0, dtype=np.uint8)
+        self.tri = Delaunay(self._keypnts)
+
+        tri_in_mask = []
+        self.tri_color = []
+
+        for triangle in tqdm(self.tri.simplices):
+            if self._tri_in_mask(triangle):
+                tri_in_mask.append(triangle)
+                tri_vertices = self._keypnts[triangle]
+
+                tri_vertices = np.array([tri_vertices[0:, 1], tri_vertices[0:,0]], dtype=np.int32).T
+                i, j = polygon(tri_vertices[:,1], tri_vertices[:,0], self.img_ori.shape)
+                color = np.mean(self.img_ori[i,j], axis = 0)
+                self.tri_color.append(color.astype(np.uint8))
+        self.tri.simplices = tri_in_mask
+        if self.isShowResult:
+            self.show_result()
+        return self.tri
     
-#     tri_image[tri_area,:] = tri_color
+    def __getitem__(self, val):
+        return {
+            "triangle": self._keypnts[self.tri.simplices[val]],
+            "color": self.tri_color[val]
+        }
 
-plt.imshow(tri_color)
-# plt.triplot(dots[:, 1], dots[:, 0], tri.simplices)
-# plt.plot(border_dots[:, 0], border_dots[:, 1], 'o')
-plt.show()
-
-
+if __name__ == "__main__":
+    # img_path = "drawing_data/dragon_cat.jpg"
+    img_path = "drawing_data/bear.jpg"
+    delaunay = DelaunayTriangles(img_path)
+    delaunay.get_delaunay_triangles()
+    # print(delaunay[1])
+    # print(delaunay._get_contour_from_mask())
