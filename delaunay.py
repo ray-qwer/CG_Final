@@ -22,9 +22,10 @@ steps:
 
 Delaunay documents: https://docs.scipy.org/doc/scipy/reference/generated/scipy.spatial.Delaunay.html
 """
-random.seed(20230531)
+
 class DelaunayTriangles:
     def __init__(self, img_path, skeleton_path="", isShowResult=True, ):
+        
         self.img_ori = cv2.imread(img_path)
 
         H, W, _ = self.img_ori.shape
@@ -89,6 +90,7 @@ class DelaunayTriangles:
                 corner: dont move
                 edges: sampling
         """
+        np.random.seed(20230531)
         edge_pnts_sampling = self._edge_pnts[np.random.choice(self._edge_pnts.shape[0], size=self._edge_pnts.shape[0]//sampling, replace=False)]
         return np.concatenate((edge_pnts_sampling, self._corner_pnts, self._polygon_border, self.skeleton_pts), axis=0)
     
@@ -107,8 +109,7 @@ class DelaunayTriangles:
         tri_color = np.zeros(self.img_ori.shape, dtype=np.uint8)
         for idx, triangle in (enumerate(self.tri.simplices)):
             tri_vertices = self._keypnts[triangle]
-            tri_vertices = tri_vertices[:,[1,0]]
-            i, j = polygon(tri_vertices[:,1], tri_vertices[:,0], self.img_ori.shape)
+            i, j = polygon(tri_vertices[:,0], tri_vertices[:,1], self.img_ori.shape)
             tri_color[i, j] = self.tri_color[idx]
         plt.imshow(tri_color)
         plt.scatter(self._keypnts[:,1], self._keypnts[:,0],c="r",s=1)
@@ -132,9 +133,7 @@ class DelaunayTriangles:
             if self._tri_in_mask(triangle):
                 tri_in_mask.append(triangle)
                 tri_vertices = self._keypnts[triangle]
-
-                tri_vertices = np.array([tri_vertices[0:, 1], tri_vertices[0:,0]], dtype=np.int32).T
-                i, j = polygon(tri_vertices[:,1], tri_vertices[:,0], self.img_ori.shape)
+                i, j = polygon(tri_vertices[:,0], tri_vertices[:,1], self.img_ori.shape)
                 color = np.mean(self.img_ori[i,j], axis = 0)
                 self.tri_color.append(color.astype(np.uint8))
         self.tri.simplices = np.array(tri_in_mask)
@@ -147,8 +146,7 @@ class DelaunayTriangles:
         self._vertex_to_simplex = np.ones((self.SegMask.shape), dtype=np.int32)*(-1)
         for idx, triangle in tqdm(enumerate(self.tri.simplices)):
             tri_vertices = self._keypnts[triangle]
-            tri_vertices = np.array([tri_vertices[0:, 1], tri_vertices[0:,0]], dtype=np.int32).T 
-            i, j = polygon(tri_vertices[:,1], tri_vertices[:,0], self.SegMask.shape)
+            i, j = polygon(tri_vertices[:,0], tri_vertices[:,1], self.SegMask.shape)
             self._vertex_to_simplex[i,j] = idx
         return self._vertex_to_simplex
 
@@ -166,8 +164,8 @@ class DelaunayTriangles:
 
 if __name__ == "__main__":
     # img_path = "drawing_data/dragon_cat.jpg"
-    # name = "dragon_cat"
-    name = "bear"
+    name = "dragon_cat"
+    # name = "bear"
     img_path = f"drawing_data/{name}.jpg"
     sk_path = f"drawing_data/{name}_skeleton.npy"
     delaunay = DelaunayTriangles(img_path, sk_path, True)
