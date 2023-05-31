@@ -1,7 +1,6 @@
 import numpy as np
 from scipy.spatial import Delaunay
 from matplotlib import pyplot as plt
-import random
 from segmentation_mask import SegmentationMask
 import cv2
 from tqdm import tqdm
