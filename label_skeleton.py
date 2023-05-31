@@ -79,11 +79,17 @@ class LabelingGUI:
     def get_labels(self):
         return self.labeled_points_array
     
-    def check_skeletal(self, npy_path=None):
+    def check_skeletal(self, npy_path=None, new_labeled_points=None, isSwapXY=False):
         if npy_path != None:
             pts = np.load(npy_path)
-        else:
+        elif np.array(new_labeled_points).any() == None:
             pts = self.labeled_points_array
+        else:
+            pts = new_labeled_points
+
+        if isSwapXY:
+            pts = pts[:, [1,0]]
+
         # plot skeleton edges
         plt.plot([pts[0,0], pts[2,0]], [pts[0,1], pts[2,1]], color="red", linewidth=3)
         plt.plot([pts[1,0], pts[2,0]], [pts[1,1], pts[2,1]], color="red", linewidth=3)
@@ -107,8 +113,8 @@ class LabelingGUI:
 
 
 if __name__ == '__main__':
-    # image_path = "drawing_data/dragon_cat.jpg"  
-    image_path = "drawing_data/bear.jpg" 
+    image_path = "drawing_data/dragon_cat.jpg"  
+    # image_path = "drawing_data/bear.jpg" 
     root = tk.Tk()
     gui = LabelingGUI(root, image_path)
     root.mainloop()
@@ -122,8 +128,8 @@ if __name__ == '__main__':
     '''
     # to load the previously labeled [15, 2] size numpy array, without manually label again:
     '''
-    # gui.check_skeletal(npy_path="drawing_data/dragon_cat_skeleton.npy")
-    gui.check_skeletal(npy_path="drawing_data/bear_skeleton.npy")
+    gui.check_skeletal(npy_path="drawing_data/dragon_cat_skeleton.npy")
+    # gui.check_skeletal(npy_path="drawing_data/bear_skeleton.npy")
 
 
     '''
