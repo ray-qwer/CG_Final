@@ -7,6 +7,10 @@ from skimage import measure
 class SegmentationMask():
     def __init__(self, image_name, isBlur=True, isShowResult=False):
         self.img_ori = cv2.imread(image_name)
+        H,W,C = self.img_ori.shape
+        scale = 512 / H
+        self.img_ori = cv2.resize(self.img_ori, (int(W*scale), int(H*scale)), interpolation=cv2.INTER_AREA)
+        
         self.img = cv2.cvtColor(self.img_ori, cv2.COLOR_BGR2GRAY)
         if isBlur:
             self.img = cv2.medianBlur(self.img, 5)

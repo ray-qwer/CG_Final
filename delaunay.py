@@ -22,19 +22,29 @@ steps:
 
 Delaunay documents: https://docs.scipy.org/doc/scipy/reference/generated/scipy.spatial.Delaunay.html
 """
-
+random.seed(20230531)
 class DelaunayTriangles:
     def __init__(self, img_path, skeleton_path="", isShowResult=True, ):
         self.img_ori = cv2.imread(img_path)
+
+        H, W, _ = self.img_ori.shape
+        scale = 512 / H
+        self.img_ori = cv2.resize(self.img_ori,(int(W*scale), int(H*scale)), interpolation=cv2.INTER_AREA)
         self.img_path = img_path
+        
         segmentationMask = SegmentationMask(image_name = img_path, isShowResult=False)
         self.SegMask = segmentationMask.get_segmentation_mask()
+
         self.isShowResult = isShowResult
         if skeleton_path != "":
             self.skeleton_pts = np.load(skeleton_path)
+            self.skeleton_pts[:,[0,1]] = self.skeleton_pts[:,[1,0]]
         else:
             self.skeleton_pts = np.zeros((0,2))
-    def _get_polygon_contour_from_mask(self, tol=0.02):
+
+        self.get_delaunay_triangles() 
+
+    def _get_polygon_contour_from_mask(self, tol=0.0001):
         """
             outline keypoint, if tolerance up, the keypoint will be less, vise versa.
             parameters: 
@@ -97,11 +107,11 @@ class DelaunayTriangles:
         tri_color = np.zeros(self.img_ori.shape, dtype=np.uint8)
         for idx, triangle in (enumerate(self.tri.simplices)):
             tri_vertices = self._keypnts[triangle]
-            tri_vertices = np.array([tri_vertices[0:, 1], tri_vertices[0:,0]], dtype=np.int32).T
+            tri_vertices = tri_vertices[:,[1,0]]
             i, j = polygon(tri_vertices[:,1], tri_vertices[:,0], self.img_ori.shape)
             tri_color[i, j] = self.tri_color[idx]
         plt.imshow(tri_color)
-        plt.scatter(self._keypnts[:,1], self._keypnts[:,0],c="r",s=0.1)
+        plt.scatter(self._keypnts[:,1], self._keypnts[:,0],c="r",s=1)
         plt.show()
 
     def get_delaunay_triangles(self):
@@ -128,6 +138,7 @@ class DelaunayTriangles:
                 color = np.mean(self.img_ori[i,j], axis = 0)
                 self.tri_color.append(color.astype(np.uint8))
         self.tri.simplices = np.array(tri_in_mask)
+
         if self.isShowResult:
             self.show_result()
         return self.tri
@@ -146,22 +157,29 @@ class DelaunayTriangles:
             "color": self.tri_color[val]
         }
 
+    def get_skeleton_pnts(self):
+        return self.skeleton_pts[:, [1,0]]
+    
+    def get_keypnts(self):
+        return self._keypnts[:, [1,0]]
+
 if __name__ == "__main__":
     # img_path = "drawing_data/dragon_cat.jpg"
+    # name = "dragon_cat"
     name = "bear"
     img_path = f"drawing_data/{name}.jpg"
     sk_path = f"drawing_data/{name}_skeleton.npy"
     delaunay = DelaunayTriangles(img_path, sk_path, True)
     # examples of how to access information from delaunay
     # get class Delaunay()
-    tri = delaunay.get_delaunay_triangles() 
+    tri = delaunay.tri
     # get the first triangle of Delaunay, the output is [idx, idx, idx],
-    tri0 = tri.simplices[0] 
+    tri0 = tri.simplices[0]
     # you can access the coordinate by:
     # method1:
     idx0 = tri.points[tri0]
     # method2:  the customized __getitem__ 
-    idx0 = delaunay[0]["triangle"]  
+    idx0 = delaunay[0]["triangle"]
     # get neighbors
     nei0 = tri.neighbors[0]  # the output form is also [idx, idx, idx]
     # you can query what simplex a vertex is by lookup table
@@ -169,3 +187,5 @@ if __name__ == "__main__":
     p_query = np.mean(idx0, axis=0).astype(int)
     lut_vertex2simplex = delaunay.vertex_to_simplex()
     print(lut_vertex2simplex[tuple(p_query)])
+
+    # print(delaunay.get_skeleton_pnts())
