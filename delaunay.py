@@ -57,7 +57,7 @@ class DelaunayTriangles:
     def _get_corner_pnts(self, min_dist=20, th_rel=0.00005):         # adaptive choosing: min_distance, threshold_rel
         # gray scale the image
         """
-            innter keypoints
+            inner keypoints
             steps: 1. do erosion first.
         """
         gray = cv2.cvtColor(self.img_ori, cv2.COLOR_RGB2GRAY)
@@ -142,6 +142,7 @@ class DelaunayTriangles:
         if self.isShowResult:
             self.show_result()
         return self.tri
+    
     def vertex_to_simplex(self):
         self._vertex_to_simplex = np.ones((self.SegMask.shape), dtype=np.int32)*(-1)
         for idx, triangle in tqdm(enumerate(self.tri.simplices)):
