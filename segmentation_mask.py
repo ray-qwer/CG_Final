@@ -19,16 +19,24 @@ class SegmentationMask():
     def _adaptive_thresh(self, img, blockSize=7, tolerance=6):
         return cv2.adaptiveThreshold(img, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY_INV, blockSize, tolerance)
 
+    def disk_mask(self, kernelSize) :
+        center = kernelSize // 2
+        y,x = np.ogrid[-center:kernelSize-center, -center:kernelSize-center]
+        mask = x*x + y*y <= center*center
+        array = np.zeros((kernelSize, kernelSize))
+        array[mask] = 1
+        return array
+
     def _closing(self, img, kernelSize=7):
-        kernel = np.ones((kernelSize, kernelSize),dtype=np.uint8)
+        kernel = self.disk_mask(kernelSize).astype(np.uint8)
         return cv2.morphologyEx(img, cv2.MORPH_CLOSE, kernel)
     
     def _dilation(self, img, kernelSize=5, iterations=1):
-        kernel = np.ones((kernelSize, kernelSize), np.uint8)
+        kernel = self.disk_mask(kernelSize).astype(np.uint8)
         return cv2.dilate(img, kernel, iterations=iterations)
     
     def _erosion(self, img, kernelSize=5, iterations=1):
-        kernel = np.ones((kernelSize, kernelSize), np.uint8)
+        kernel = self.disk_mask(kernelSize).astype(np.uint8)
         return cv2.erode(img, kernel, iterations=iterations)
     
     def _flood_filling(self, img):
@@ -74,7 +82,11 @@ class SegmentationMask():
 if __name__ == "__main__":
     # dry run here:
     # ip = "drawing_data/dragon_cat.jpg"
-    ip = 'drawing_data/bear.jpg'
+    # ip = 'drawing_data/bear.jpg'
+    # ip = "drawing_data/maoli.jpg"
+    # ip = "drawing_data/maoli_lattice.jpg"
+    ip = "drawing_data/maoli_stripes.jpg"
 
     segmentationMask = SegmentationMask(image_name=ip, isShowResult=True)
-    result = segmentationMask.get_segmentation_mask()
+    # result = segmentationMask.get_segmentation_mask()
+    result = segmentationMask.get_segmentation_mask(D1_kernel=15, D2_kernel=10, D1_iter=3, D2_iter=2)
