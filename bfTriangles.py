@@ -14,6 +14,10 @@ from skimage.measure import approximate_polygon
 
 class BFTriangle:
     def __init__(self, img_path, seg_mask, skeleton_path="", isShowResult=True, strip=1):
+        """
+        Arg:
+            strip: the interval size between each triangle vertex (or we should say keypoint)
+        """
         self.img = cv2.imread(img_path)
         # resize the image
         H, W, _ = self.img.shape
@@ -91,6 +95,11 @@ class BFTriangle:
         plt.show()
 
     def vertex_to_simplex(self):
+        """
+            return a [H,W] size of numpy array, where each entry (pixel) indicates that 
+            which triangle index does this entry (pixel) belongs to.
+            returning -1 means that it does not belong to any triangle.
+        """
         self._vertex_to_simplex = np.ones((self.seg_mask.shape), dtype=np.int32)*(-1)
         for idx, triangle in tqdm(enumerate(self.tri.simplices)):
             tri_vertices = self._keypnts[triangle][:,[1,0]]
