@@ -10,8 +10,8 @@ from typing import List, Dict, Set, Tuple
 import scipy.sparse.linalg as spla
 import scipy.sparse as sp
 
-
-csr_matrix = sp._csr.csr_matrix  # for typing  # pyright: ignore[reportPrivateUsage]
+# this line requries scipy >= 1.8.0
+# csr_matrix = sp._csr.csr_matrix  # for typing  # pyright: ignore[reportPrivateUsage]
 
 
 class ARAP():
@@ -330,23 +330,33 @@ def plot_mesh(vertices, triangles, pins_xy):
 
 
 if __name__ == "__main__":
-    name = "dragon_cat"
-    img_path = f"drawing_data/{name}.jpg"
-    sk_path = f"drawing_data/{name}_skeleton.npy"
+    from config import dragon_cat, bear, maoli, shit
+    model = shit
+    img_path = model["img_path"]
+    sk_path = model["skeleton_path"]
+    segmask_config = model["segmask_config"]
 
     from label_skeleton import LabelingGUI
     import tkinter as tk
     root = tk.Tk()
     gui = LabelingGUI(root, img_path)
-    gui.check_skeletal(npy_path="drawing_data/dragon_cat_skeleton.npy")
+    gui.check_skeletal(npy_path=sk_path)
 
+    """
     from delaunay import DelaunayTriangles
-    delaunay = DelaunayTriangles(img_path, sk_path, False)
-    delaunay.show_result()
+    triangle = DelaunayTriangles(img_path, sk_path, False)
+    triangle.show_result()
+    """
+    from bfTriangles import BFTriangle
+    from segmentation_mask import SegmentationMask
+    seg = SegmentationMask(image_name=img_path, isShowResult=False)
+    seg_mask = seg.get_segmentation_mask(**segmask_config)
+    triangle = BFTriangle(img_path=img_path, seg_mask=seg_mask, skeleton_path=sk_path, strip=4)
     
-    skeleton_pts = delaunay.skeleton_pts
-    vertices = delaunay._keypnts
-    triangles = delaunay.tri.simplices
+    skeleton_pts = triangle.skeleton_pts
+    vertices = triangle._keypnts
+    triangles = triangle.tri.simplices
+    print("initializing ARAP...")
     arap = ARAP(pins_xy=skeleton_pts, vertices=vertices, triangles=triangles)
 
     # adds random offset to skeleton points
@@ -357,32 +367,8 @@ if __name__ == "__main__":
     # get new vertices
     new_vertices = arap.solve(new_pins_xy)
     # show new result
-    gui.check_skeletal(new_labeled_points=new_pins_xy, isSwapXY=True)
-    delaunay._keypnts = new_vertices
-    delaunay.show_result()
-
-    # adds random offset to skeleton points
-    mu, sigma = 0, 15 # mean and standard deviation
-    s = np.random.normal(mu, sigma, (15,2))
-    new_pins_xy = skeleton_pts + s
-
-    # get new vertices
-    new_vertices = arap.solve(new_pins_xy)
-    # show new result
-    gui.check_skeletal(new_labeled_points=new_pins_xy, isSwapXY=True)
-    delaunay._keypnts = new_vertices
-    delaunay.show_result()
-
-    # adds random offset to skeleton points
-    mu, sigma = 10, 20 # mean and standard deviation
-    s = np.random.normal(mu, sigma, (15,2))
-    new_pins_xy = skeleton_pts + s
-
-    # get new vertices
-    new_vertices = arap.solve(new_pins_xy)
-    # show new result
-    gui.check_skeletal(new_labeled_points=new_pins_xy, isSwapXY=True)
-    delaunay._keypnts = new_vertices
-    delaunay.show_result()
+    gui.check_skeletal(new_labeled_points=new_pins_xy, isSwapXY=False)
+    triangle._keypnts = new_vertices
+    triangle.show_result()
 
     
