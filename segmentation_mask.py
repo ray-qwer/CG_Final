@@ -58,25 +58,32 @@ class SegmentationMask():
         return np.where(region == largest_region_label, 1, 0)
     
     def show_result(self, ):
-        mask3d = np.repeat(self.mask[:, :, np.newaxis], 3, axis=2)
+        mask3d = np.repeat(self.mask3[:, :, np.newaxis], 3, axis=2)
         result = mask3d * self.img_ori
-        plt.imshow(result)
+        plt.subplot(2,4,1), plt.imshow(self.img1, cmap="gray"), plt.title("adaptive threshold")
+        plt.subplot(2,4,2), plt.imshow(self.img2, cmap="gray"), plt.title("closing")
+        plt.subplot(2,4,3), plt.imshow(self.img3, cmap="gray"), plt.title("dilation")
+        plt.subplot(2,4,4), plt.imshow(self.mask, cmap="gray"), plt.title("flood filling")
+        plt.subplot(2,4,5), plt.imshow(self.mask1, cmap="gray"), plt.title("dilation")
+        plt.subplot(2,4,6), plt.imshow(self.mask2, cmap="gray"), plt.title("erosion")
+        plt.subplot(2,4,7), plt.imshow(self.mask3, cmap="gray"), plt.title("retain largest polygon")
+        plt.subplot(2,4,8), plt.imshow(result, cmap="gray"), plt.title("result")
         plt.show()
     
-    def get_segmentation_mask(self, D1_kernel=7, D2_kernel=5, D1_iter=3, D2_iter=2):
+    def get_segmentation_mask(self, D1_kernel=7, D2_kernel=5, D1_iter=3, D2_iter=2, blockSize=7, tolerance=6, showInterResult=False):
         '''
         main function here
         '''
-        self.img = self._adaptive_thresh(self.img)
-        self.img = self._closing(self.img)
-        self.img = self._dilation(self.img, kernelSize=D1_kernel, iterations=D1_iter)
-        self.mask = self._flood_filling(self.img)
-        self.mask = self._dilation(self.mask, kernelSize=D2_kernel, iterations=D2_iter)
-        self.mask = self._erosion(self.mask, kernelSize=D2_kernel, iterations=D1_iter+D2_iter-1)
-        self.mask = self._retain_largest_polygon(self.mask)
+        self.img1 = self._adaptive_thresh(self.img, blockSize=blockSize, tolerance=tolerance)
+        self.img2 = self._closing(self.img1)
+        self.img3 = self._dilation(self.img2, kernelSize=D1_kernel, iterations=D1_iter)
+        self.mask = self._flood_filling(self.img3)
+        self.mask1 = self._dilation(self.mask, kernelSize=D2_kernel, iterations=D2_iter)
+        self.mask2 = self._erosion(self.mask1, kernelSize=int((D1_kernel+D2_kernel)/2), iterations=D1_iter+D2_iter-1)
+        self.mask3 = self._retain_largest_polygon(self.mask2)
         if self.isShowResult:
             self.show_result()
-        return self.mask
+        return self.mask3
 
 
 if __name__ == "__main__":
@@ -85,8 +92,9 @@ if __name__ == "__main__":
     # ip = 'drawing_data/bear.jpg'
     # ip = "drawing_data/maoli.jpg"
     # ip = "drawing_data/maoli_lattice.jpg"
-    ip = "drawing_data/maoli_stripes.jpg"
+    # ip = "drawing_data/maoli_stripes.jpg"
+    ip = "drawing_data/shit.jpg"
 
     segmentationMask = SegmentationMask(image_name=ip, isShowResult=True)
-    # result = segmentationMask.get_segmentation_mask()
-    result = segmentationMask.get_segmentation_mask(D1_kernel=15, D2_kernel=10, D1_iter=3, D2_iter=2)
+    # result = segmentationMask.get_segmentation_mask(D1_kernel=7, D2_kernel=5, D1_iter=0, D2_iter=0,)
+    result = segmentationMask.get_segmentation_mask(D1_kernel=7, D1_iter=2, D2_iter=0, blockSize=15, tolerance=1)
