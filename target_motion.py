@@ -2,7 +2,6 @@ import cv2
 import mediapipe as mp
 import numpy as np
 
-
 class TargetMotion():
 	def __init__(self, isDraw=False):
 		'''
@@ -33,7 +32,7 @@ class TargetMotion():
 			_, frame_ = cap.read()
 
 			try:
-				W, H, _ = frame_.shape
+				H, W, _ = frame_.shape
 				frame = cv2.cvtColor(frame_, cv2.COLOR_BGR2RGB)
 
 				results = self.pose.process(frame)
@@ -94,5 +93,11 @@ if __name__ == "__main__":
 	test dry run here
 	'''
 	targetMotion = TargetMotion(isDraw=True)
-	video_name = "target_motion_data/3.mp4"
+	video_name = "target_motion_data/8.mp4"
 	target_motion_vec = targetMotion.get_motion_vec(video_name)
+
+	origin = ((target_motion_vec[:, 2, :] + target_motion_vec[:, 9, :])/2).astype(np.int32)
+	origin = np.expand_dims(origin, axis=1)
+	target_motion_vec_normalized = (target_motion_vec - origin).astype(np.int32)
+
+	
