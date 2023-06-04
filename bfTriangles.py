@@ -83,16 +83,19 @@ class BFTriangle:
                                 [centroid[1], centroid[1]+1, centroid[1], centroid[1]+1]]).astype(int)
         return np.all(self.seg_mask[centroid_4_dots[0], centroid_4_dots[1]] == True)
     
-    def show_result(self, show_dots=False):
+    def show_result(self, show_dots=False, returnResult=False):
         tri_color = np.zeros(self.img.shape, dtype=np.uint8)
         for idx, triangle in (enumerate(self.tri.simplices)):
             tri_vertices = self._keypnts[triangle][:,[1,0]]
             i, j = polygon(tri_vertices[:,0], tri_vertices[:,1], self.img.shape)
             tri_color[i, j] = self.tri_color[idx]
-        plt.imshow(tri_color)
-        if show_dots:
-            plt.scatter(self._keypnts[:,0], self._keypnts[:,1],c="r",s=1)
-        plt.show()
+        if returnResult:
+            return tri_color
+        else:
+            plt.imshow(tri_color)
+            if show_dots:
+                plt.scatter(self._keypnts[:,0], self._keypnts[:,1],c="r",s=1)
+            plt.show()
 
     def vertex_to_simplex(self):
         """
