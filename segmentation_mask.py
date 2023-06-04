@@ -5,8 +5,11 @@ from scipy import ndimage
 from skimage import measure
 
 class SegmentationMask():
-    def __init__(self, image_name, isBlur=True, isShowResult=False):
-        self.img_ori = cv2.imread(image_name)
+    def __init__(self, image_name, image=None, isBlur=True, isShowResult=False):
+        if np.array(image).any() == None:
+            self.img_ori = cv2.imread(image_name)
+        else:
+            self.img_ori = image
         # rescale the input image: (H,W) -> (512, W')
         H,W,C = self.img_ori.shape
         scale = 512 / H
@@ -89,12 +92,14 @@ class SegmentationMask():
 if __name__ == "__main__":
     # dry run here:
     # ip = "drawing_data/dragon_cat.jpg"
-    # ip = 'drawing_data/bear.jpg'
+    ip = 'drawing_data/bear.jpg'
     # ip = "drawing_data/maoli.jpg"
     # ip = "drawing_data/maoli_lattice.jpg"
     # ip = "drawing_data/maoli_stripes.jpg"
-    ip = "drawing_data/shit.jpg"
+    # ip = "drawing_data/shit.jpg"
+    # ip = "drawing_data/stickman.jpg"
 
     segmentationMask = SegmentationMask(image_name=ip, isShowResult=True)
     # result = segmentationMask.get_segmentation_mask(D1_kernel=7, D2_kernel=5, D1_iter=0, D2_iter=0,)
-    result = segmentationMask.get_segmentation_mask(D1_kernel=7, D1_iter=2, D2_iter=0, blockSize=15, tolerance=1)
+    para = {"D1_kernel":11, "D2_kernel":9, "D1_iter":2, "D2_iter":2}
+    result = segmentationMask.get_segmentation_mask(**para)
