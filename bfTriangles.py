@@ -43,6 +43,7 @@ class BFTriangle:
         
         # delaunay ttriangles
         self.get_delaunay_triangles(strip)
+        self._tri_label_with_joints()
 
     def get_delaunay_triangles(self, strip=1):
         # meshgrid
@@ -104,7 +105,7 @@ class BFTriangle:
         assert len(hierarchy) == self.skeleton_pts.shape[0]
         tri_color = np.zeros_like(self.img, dtype=np.uint8)
         for i in hierarchy:
-            shading = np.where(self.shading == i)[0]
+            shading = np.where(self.tri_shading == i)[0]
             for s in shading:
                 triangle = self.tri.simplices[s]
                 tri_vertices = self._keypnts[triangle][:, [1,0]]
