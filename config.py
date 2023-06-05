@@ -22,3 +22,9 @@ shit = {
     "skeleton_path":"drawing_data/shit_skeleton.npy",
     "segmask_config":{"D1_kernel":7, "D1_iter":2, "D2_iter":0, "blockSize":15, "tolerance":1},
 }
+
+stickman = {
+    "img_path":"drawing_data/stickman.jpg",
+    "skeleton_path":"drawing_data/stickman_skeleton.npy",
+    "segmask_config":{"D1_kernel":7, "D1_iter":1, "D2_iter":0, "blockSize":15, "tolerance":5},
+}
