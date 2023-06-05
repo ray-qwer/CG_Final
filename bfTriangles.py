@@ -114,8 +114,6 @@ class BFTriangle:
             return tri_color
         else:
             plt.imshow(tri_color)
-            if show_dots:
-                plt.scatter(self._keypnts[:,0], self._keypnts[:,1],c="r",s=1)
             plt.show()
 
     def _tri_label_with_joints(self, showResult=False):
@@ -168,7 +166,7 @@ class BFTriangle:
 
             plt.imshow(tri_color)
             plt.show()
-            
+
     def find_neighbors_triangle(self, node):
         """ this is an alternative function of delaunay.neighbors, because we have trimmed the triangles out of mask """
         h, w, _ = self.img.shape
