@@ -11,7 +11,7 @@ import numpy as np
 import cv2
 import matplotlib.pyplot as plt
 import tkinter as tk
-
+import os 
 
 def choose_drawing(name):
 	if name == "dragon_cat":
@@ -38,6 +38,9 @@ if __name__ == "__main__":
 	parser.add_argument("--strip", type=int, default=4) # see line 59
 	parser.add_argument("--output", type=str, default="output/test_output.mp4") # see line 112
 	args = parser.parse_args()
+	out_name = args.output.split("/")
+	if len(out_name)>1:
+		os.makedirs(out_name[0], exist_ok=True)
 
 	############################
 	##	choose drawing figure ##
