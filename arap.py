@@ -11,7 +11,7 @@ import scipy.sparse.linalg as spla
 import scipy.sparse as sp
 
 # this line requries scipy >= 1.8.0
-# csr_matrix = sp._csr.csr_matrix  # for typing  # pyright: ignore[reportPrivateUsage]
+csr_matrix = sp._csr.csr_matrix  # for typing  # pyright: ignore[reportPrivateUsage]
 
 
 class ARAP():
@@ -38,7 +38,7 @@ class ARAP():
     between (e' in E') and (e in E). This way, rotation is essentially free, while scaling is not.
     """
 
-    def __init__(self, pins_xy: npt.NDArray[np.float32], triangles: List[npt.NDArray[np.int32]], vertices: npt.NDArray[np.float32], w: int = 1000):  # noqa: C901
+    def __init__(self, pins_xy: npt.NDArray[np.float32], triangles: List[npt.NDArray[np.int32]], vertices: npt.NDArray[np.float32], w: int = 10000):  # noqa: C901
         """
         Sets up the matrices needed for later solves.
 

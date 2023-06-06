@@ -5,12 +5,32 @@ from scipy import ndimage
 from skimage import measure
 
 class SegmentationMask():
-    def __init__(self, image_name, isBlur=True, isShowResult=False):
-        self.img_ori = cv2.imread(image_name)
-        # rescale the input image: (H,W) -> (512, W')
+    def __init__(self, image_name, image=None, isBlur=True, isShowResult=False):
+        if np.array(image).any() == None:
+            self.img_ori = cv2.imread(image_name)
+        else:
+            self.img_ori = image
+        
+        """
+        To ensure our drawing figure can move without exceeding the canvas boundaries,
+        we need to do padding to the canvas.
+        The size of padding can be controlled by 'hori_pad_size' and 'veri_pad_size'.
+        e.g. hori_pad_size = 0.2 means making the canvas become 1+(2*0.2) = 1.4 original width
+        """
+        hori_pad_size = 0.2 
+        veri_pad_size = 0.15
         H,W,C = self.img_ori.shape
-        scale = 512 / H
-        self.img_ori = cv2.resize(self.img_ori, (int(W*scale), int(H*scale)), interpolation=cv2.INTER_AREA)
+        background_color = self.img_ori[10,10,:]
+        img_padding = np.ones((int((1+2*veri_pad_size)*H), int((1+2*hori_pad_size)*W), 3), dtype=np.uint8) * background_color
+        img_padding[int(veri_pad_size*H):int((1+veri_pad_size)*H), int(hori_pad_size*W):int((1+hori_pad_size)*W), :] = self.img_ori
+        self.img_ori = img_padding
+
+        # rescale the input image: (H,W) -> (768, W')
+        H,W,C = self.img_ori.shape
+        scale = 768 / H
+        H_prime, W_prime = (int(H*scale), int(W*scale))
+        self.img_ori = cv2.resize(self.img_ori, ((W_prime, H_prime)), interpolation=cv2.INTER_AREA)
+ 
         self.img = cv2.cvtColor(self.img_ori, cv2.COLOR_BGR2GRAY)
         if isBlur:
             self.img = cv2.medianBlur(self.img, 5)
@@ -93,8 +113,9 @@ if __name__ == "__main__":
     # ip = "drawing_data/maoli.jpg"
     # ip = "drawing_data/maoli_lattice.jpg"
     # ip = "drawing_data/maoli_stripes.jpg"
-    ip = "drawing_data/shit.jpg"
+    # ip = "drawing_data/shit.jpg"
+    ip = "drawing_data/ghost.jpg"
 
     segmentationMask = SegmentationMask(image_name=ip, isShowResult=True)
-    # result = segmentationMask.get_segmentation_mask(D1_kernel=7, D2_kernel=5, D1_iter=0, D2_iter=0,)
-    result = segmentationMask.get_segmentation_mask(D1_kernel=7, D1_iter=2, D2_iter=0, blockSize=15, tolerance=1)
+    para = {"D1_kernel":11, "D1_iter":2, "D2_kernel":7, "D2_iter":1, "blockSize":49, "tolerance":2}
+    result = segmentationMask.get_segmentation_mask(**para)

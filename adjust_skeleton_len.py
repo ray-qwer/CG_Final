@@ -22,7 +22,8 @@ class AdjustSkeletonLength:
 		'''
 		obtain the length of each skeleton edge.
 		'''
-		sk_lengths = np.zeros((15,))
+		assert (sk.shape[0] >= 15 and sk.shape[0] <= 19), "skeleton points must be >= 15 and <= 19"
+		sk_lengths = np.zeros((sk.shape[0],))
 		origin = ((sk[2] + sk[9]) / 2).astype(np.int32)
 		sk_lengths[0] = self.get_length(sk[0], sk[2])
 		sk_lengths[1] = self.get_length(sk[1], sk[2])
@@ -39,6 +40,12 @@ class AdjustSkeletonLength:
 		sk_lengths[12] = self.get_length(sk[11], sk[13])
 		sk_lengths[13] = self.get_length(sk[10], sk[12])
 		sk_lengths[14] = self.get_length(sk[12], sk[14])
+		if sk.shape[0] > 15:
+			sk_lengths[15] = self.get_length(sk[0], sk[15])
+			sk_lengths[16] = self.get_length(sk[0], sk[16])
+		if sk.shape[0] > 17:
+			sk_lengths[17] = self.get_length(sk[15], sk[17])
+			sk_lengths[18] = self.get_length(sk[16], sk[18])
 		return sk_lengths
 	
 	def get_theta(self, pt1, pt2):
@@ -70,8 +77,9 @@ class AdjustSkeletonLength:
 		'''
 		adjust the entire target motion vector's skeleton length
 		input:
-			target_motion_vec: a [T,15,2] size numpy array, where T is the total frame number.
+			target_motion_vec: a [T,sk_pts,2] size numpy array, where T is the total frame number.
 		'''
+		assert (target_motion_vec.shape[1] == self.draw_sk.shape[0])
 		origins = ((target_motion_vec[:, 2] + target_motion_vec[:, 9]) / 2).astype(np.int32)
 		
 		for frameIdx, frame_sk in enumerate(target_motion_vec):
@@ -79,9 +87,21 @@ class AdjustSkeletonLength:
 			origin = origins[frameIdx]
 			# adjust the length of skeleton points
 			# then, adjust its neighbor (or we should say, its affected skeleton points) to ensure the rigidity
-			frame_sk[2], offset = self.adjust(origin, frame_sk[2], self.draw_sk_length[7])
-			frame_sk[[0,1,3,4,5,6,7]] += offset
-			frame_sk[0], offset = self.adjust(frame_sk[2], frame_sk[0], self.draw_sk_length[0])
+			frame_sk[2], offset_head = self.adjust(origin, frame_sk[2], self.draw_sk_length[7])
+			frame_sk[[0,1,3,4,5,6,7]] += offset_head
+			frame_sk[0], offset_nose = self.adjust(frame_sk[2], frame_sk[0], self.draw_sk_length[0])
+
+			if frame_sk.shape[0] > 15:
+				frame_sk[[15,16]] += offset_head + offset_nose
+				frame_sk[15], offset_l_eye = self.adjust(frame_sk[0], frame_sk[15], self.draw_sk_length[15])
+				frame_sk[16], offset_r_eye = self.adjust(frame_sk[0], frame_sk[16], self.draw_sk_length[16])
+			if frame_sk.shape[0] > 17:
+				frame_sk[[17,18]] += offset_head + offset_nose
+				frame_sk[[17]] += offset_l_eye
+				frame_sk[[18]] += offset_r_eye
+				frame_sk[17], offset = self.adjust(frame_sk[15], frame_sk[17], self.draw_sk_length[17])
+				frame_sk[18], offset = self.adjust(frame_sk[16], frame_sk[18], self.draw_sk_length[18])
+
 			frame_sk[1], offset = self.adjust(frame_sk[2], frame_sk[1], self.draw_sk_length[1])
 			frame_sk[[4,6]] += offset
 			frame_sk[3], offset = self.adjust(frame_sk[2], frame_sk[3], self.draw_sk_length[2])
@@ -126,7 +146,7 @@ if __name__ == "__main__":
 	from target_motion import TargetMotion
 	targetMotion = TargetMotion(isDraw=False)
 	video_name = "target_motion_data/8.mp4"
-	target_motion_vec = targetMotion.get_motion_vec(video_name)
+	target_motion_vec = targetMotion.get_motion_vec(video_name, sk_pts=19)
 	origin = ((target_motion_vec[:, 2, :] + target_motion_vec[:, 9, :]) / 2).astype(np.int32)
 	origin = np.expand_dims(origin, axis=1)
 	target_motion_vec_normalized = (target_motion_vec - origin).astype(np.int32)
