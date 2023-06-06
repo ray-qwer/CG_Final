@@ -28,3 +28,15 @@ stickman = {
     "skeleton_path":"drawing_data/stickman_skeleton.npy",
     "segmask_config":{"D1_kernel":7, "D1_iter":1, "D2_iter":0, "blockSize":15, "tolerance":5},
 }
+
+stickman1 = {
+    "img_path":"drawing_data/stickman1.jpg",
+    "skeleton_path":"drawing_data/stickman1_skeleton.npy",
+    "segmask_config":{"D1_kernel":9, "D1_iter":1, "D2_iter":0, "blockSize":17, "tolerance":2},
+}
+
+ghost = {
+    "img_path":"drawing_data/ghost.jpg",
+    "skeleton_path":"drawing_data/ghost_skeleton.npy",
+    "segmask_config":{"D1_kernel":11, "D1_iter":2, "D2_kernel":7, "D2_iter":1, "blockSize":49, "tolerance":2},
+}
