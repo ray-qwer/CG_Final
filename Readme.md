@@ -19,7 +19,7 @@ To obtain the motion-retargetted video of a selected drawing figure:
 $ python main.py --drawing <figure_name> --motion <motion_num> --strip <strip_num> --sk_pts <sk_pts>
 ``` 
 where:
-- ```<figure_name>``` can be anyone of figures located in ```config.py```. Default = ```stickman1```. You can choose ```15```/```17```/```19```.
+- ```<figure_name>``` can be anyone of figures located in ```config.py```. Default = ```stickman1```.
 - ```<motion_num>``` is the name of target motion video located in ```target_motion_data/```. For example, inputting ```<motion_num>``` as ```14``` will choose the video ```14.mp4```
 - ```<strip>``` is the triangle mesh resolution, you can choose ```2``` or ```4```. (Note: smaller value requires larger computation)
 - ```<sk_pts>``` is the total skeleton point used in motion retargetting. Default = ```19```. You can choose ```15```/```17```/```19```.
@@ -33,7 +33,7 @@ where:
 - ```<pos>``` is ```left``` or ```right```. This is where you stitch your video.
 - ```<vid2>``` is the path to background video.
 - ```<output_path>``` is the path of output video. Default = ```output/test_background_output.mp4```
-> For more detail of args, please see ```main.py```.
+> For more detail of args, please see ```modify_video_background.py```.
 
 ## Example Result
 1. (drawing) stickman1 + (motion)   
