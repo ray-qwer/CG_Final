@@ -4,14 +4,14 @@ from target_motion import TargetMotion
 from label_skeleton import LabelingGUI
 from arap import ARAP
 from adjust_skeleton_len import AdjustSkeletonLength
-from config import dragon_cat, bear, maoli, shit, stickman
+from config import dragon_cat, bear, maoli, shit, stickman, stickman1, ghost
 
 from argparse import ArgumentParser
 import numpy as np
 import cv2
 import matplotlib.pyplot as plt
 import tkinter as tk
-
+import os
 
 def choose_drawing(name):
 	if name == "dragon_cat":
@@ -24,20 +24,28 @@ def choose_drawing(name):
 		return shit
 	if name == "stickman":
 		return stickman
-
+	if name == "stickman1":
+		return stickman1
+	if name == "ghost":
+		return ghost
 
 if __name__ == "__main__":
 	parser = ArgumentParser()
 	'''add argument here'''
-	parser.add_argument("--drawing", type=str, default="stickman", choices=["dragon_cat", 
+	parser.add_argument("--drawing", type=str, default="stickman1", choices=["dragon_cat", 
 																			"bear", 
 																			"maoli", 
 																			"shit", 
-																			"stickman"]) 
-	parser.add_argument("--motion", type=str, default=8) # see line 68
+																			"stickman",
+																			"stickman1",
+																			"ghost"]) 
+	parser.add_argument("--motion", type=str, default="8") # see line 68
 	parser.add_argument("--strip", type=int, default=4) # see line 59
 	parser.add_argument("--output", type=str, default="output/test_output.mp4") # see line 112
 	args = parser.parse_args()
+	out_name = args.output.split("/")
+	if len(out_name)>1:
+		os.makedirs(out_name[0], exist_ok=True)
 
 	############################
 	##	choose drawing figure ##
@@ -66,7 +74,7 @@ if __name__ == "__main__":
 	##################################
 	targetMotion = TargetMotion(isDraw=False)
 	video_name = f"target_motion_data/{args.motion}.mp4"
-	target_motion_vec = targetMotion.get_motion_vec(video_name)
+	target_motion_vec = targetMotion.get_motion_vec(video_name, sk_pts=19)
 
 	##################################
 	##	adjust skeleton length of 	##
@@ -83,6 +91,14 @@ if __name__ == "__main__":
 	origin = np.expand_dims(origin, axis=1)
 	target_motion_vec_normalized = (target_motion_vec - origin).astype(np.int32)
 
+	##################################################
+	##	define the moving offset of the origin		##
+	##	(for the motion retargetted drawing figure)	##
+	##################################################
+	moving_offset_weighting = 0.35
+	init_origin = origin[0]
+	origin_offset = moving_offset_weighting * (origin - init_origin)
+
 	############################
 	##	As-Rigid-As-Possible  ##
 	## 	Shape Manipilation	  ##
@@ -97,7 +113,7 @@ if __name__ == "__main__":
 	output_video = []
 	for i in range(target_motion_vec_normalized.shape[0]):
 		print(f"applying ARAP on each frame... (frame {i+1}/{target_motion_vec.shape[0]})", end="\r")
-		new_pins_xy = target_motion_vec_normalized[i] + skeleton_pts_origin
+		new_pins_xy = target_motion_vec_normalized[i] + skeleton_pts_origin + origin_offset[i]
 		new_vertices = arap.solve(new_pins_xy)
 		triangle._keypnts = new_vertices
 		frame_result = triangle.show_result(returnResult=True)
