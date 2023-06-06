@@ -4,12 +4,13 @@ from PIL import Image, ImageTk, ImageDraw
 import segmentation_mask
 
 class MaskingTool:
-    def __init__(self, master, result):
+    def __init__(self, master, init_mask, ori_img):
         self.master = master
         self.canvas = tk.Canvas(self.master, width=572, height=768)
         self.canvas.pack()
 
-        self.image = None
+        self.image = ori_img.astype(np.uint8)
+        self.init_mask = init_mask.astype(np.uint8)
         self.masked_image = None
         self.masking = False
         self.mask_points = []
@@ -24,14 +25,16 @@ class MaskingTool:
         self.canvas.bind("<B1-Motion>", self.on_mouse_drag)
 
         # Load result image
-        self.load_result_image(result)
-        print(result.shape)
+        self.load_result_image(self.init_mask, self.image)
 
         # Show image on canvas
         self.show_image()
 
-    def load_result_image(self, result):
-        result = np.squeeze(result).astype(np.uint8) # turn into uint8
+    def load_result_image(self, init_mask, image):
+        image[:,:,0] *= init_mask
+        image[:,:,1] *= init_mask
+        image[:,:,2] *= init_mask
+        result = np.squeeze(image).astype(np.uint8) # turn into uint8
         self.image = Image.fromarray(result.astype(np.uint8).copy()).convert("RGB")
         self.masked_image = self.image.copy()
 
@@ -75,9 +78,10 @@ window.title("遮罩工具")
 segmentationMask = segmentation_mask.SegmentationMask(image_name="drawing_data/ghost.jpg", isShowResult=False)
 para = {"D1_kernel": 11, "D1_iter": 2, "D2_kernel": 7, "D2_iter": 1, "blockSize": 49, "tolerance": 2}
 result = segmentationMask.get_segmentation_mask(**para)
+ori_img = segmentationMask.img_ori
 
 # Create the masking_tool instance
-masking_tool = MaskingTool(window, result)
+masking_tool = MaskingTool(window, result, ori_img)
 
 # Start the GUI event loop
 window.mainloop()
