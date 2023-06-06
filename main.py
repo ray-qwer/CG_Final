@@ -4,7 +4,7 @@ from target_motion import TargetMotion
 from label_skeleton import LabelingGUI
 from arap import ARAP
 from adjust_skeleton_len import AdjustSkeletonLength
-from config import dragon_cat, bear, maoli, shit, stickman, stickman1, ghost
+from config import *
 
 from argparse import ArgumentParser
 import numpy as np
@@ -13,21 +13,15 @@ import matplotlib.pyplot as plt
 import tkinter as tk
 import os
 
-def choose_drawing(name):
-	if name == "dragon_cat":
-		return dragon_cat
-	if name == "bear":
-		return bear
-	if name == "maoli":
-		return maoli
-	if name == "shit":
-		return shit
-	if name == "stickman":
-		return stickman
-	if name == "stickman1":
-		return stickman1
-	if name == "ghost":
-		return ghost
+def choose_drawing(name):	
+	table = {"dragon_cat": dragon_cat,
+	  		 "bear": bear,
+			 "maoli": maoli,
+			 "shit": shit,
+			 "stickman": stickman,
+			 "stickman1": stickman1,
+			 "ghost": ghost,}
+	return table[name]
 
 if __name__ == "__main__":
 	parser = ArgumentParser()
