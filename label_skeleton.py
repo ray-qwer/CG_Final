@@ -77,7 +77,7 @@ class LabelingGUI:
                 break
 
     def save_points(self):
-        if len(self.points) < 15:
+        if len(self.points) >= 15:
             labeled_points = []
             for i, point in enumerate(self.points):
                 try:
@@ -136,7 +136,7 @@ class LabelingGUI:
 
 
 if __name__ == '__main__':
-    name = "stickman"
+    name = "pig"
     image_path = f"drawing_data/{name}.jpg"  
     root = tk.Tk()
     gui = LabelingGUI(root, image_path)

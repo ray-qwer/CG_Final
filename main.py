@@ -23,7 +23,8 @@ if __name__ == "__main__":
 																			"shit", 
 																			"stickman",
 																			"stickman1",
-																			"ghost"]) 
+																			"ghost",
+																			"pig"]) 
 	parser.add_argument("--motion", type=str, default="8") # see line 68
 	parser.add_argument("--strip", type=int, default=4) # see line 59
 	parser.add_argument("--output", type=str, default="output/test_output.mp4") # see line 112
