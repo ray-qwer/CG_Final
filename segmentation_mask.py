@@ -3,6 +3,9 @@ import numpy as np
 from matplotlib import pyplot as plt
 from scipy import ndimage
 from skimage import measure
+from PIL import Image, ImageTk, ImageDraw
+import io
+
 
 class SegmentationMask():
     def __init__(self, image_name, image=None, isBlur=True, isShowResult=False):
@@ -80,15 +83,15 @@ class SegmentationMask():
     def show_result(self, ):
         mask3d = np.repeat(self.mask3[:, :, np.newaxis], 3, axis=2)
         result = mask3d * self.img_ori
-        plt.subplot(2,4,1), plt.imshow(self.img1, cmap="gray"), plt.title("adaptive threshold")
-        plt.subplot(2,4,2), plt.imshow(self.img2, cmap="gray"), plt.title("closing")
-        plt.subplot(2,4,3), plt.imshow(self.img3, cmap="gray"), plt.title("dilation")
-        plt.subplot(2,4,4), plt.imshow(self.mask, cmap="gray"), plt.title("flood filling")
-        plt.subplot(2,4,5), plt.imshow(self.mask1, cmap="gray"), plt.title("dilation")
-        plt.subplot(2,4,6), plt.imshow(self.mask2, cmap="gray"), plt.title("erosion")
-        plt.subplot(2,4,7), plt.imshow(self.mask3, cmap="gray"), plt.title("retain largest polygon")
-        plt.subplot(2,4,8), plt.imshow(result, cmap="gray"), plt.title("result")
-        plt.show()
+        # plt.subplot(2,4,1), plt.imshow(self.img1, cmap="gray"), plt.title("adaptive threshold")
+        # plt.subplot(2,4,2), plt.imshow(self.img2, cmap="gray"), plt.title("closing")
+        # plt.subplot(2,4,3), plt.imshow(self.img3, cmap="gray"), plt.title("dilation")
+        # plt.subplot(2,4,4), plt.imshow(self.mask, cmap="gray"), plt.title("flood filling")
+        # plt.subplot(2,4,5), plt.imshow(self.mask1, cmap="gray"), plt.title("dilation")
+        # plt.subplot(2,4,6), plt.imshow(self.mask2, cmap="gray"), plt.title("erosion")
+        # plt.subplot(2,4,7), plt.imshow(self.mask3, cmap="gray"), plt.title("retain largest polygon")
+        # plt.subplot(2,4,8), plt.imshow(result, cmap="gray"), plt.title("result")
+        # plt.show()
     
     def get_segmentation_mask(self, D1_kernel=7, D2_kernel=5, D1_iter=3, D2_iter=2, blockSize=7, tolerance=6, showInterResult=False):
         '''
