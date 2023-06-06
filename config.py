@@ -8,7 +8,7 @@ dragon_cat = {
 bear = {
     "img_path":"drawing_data/bear.jpg",
     "skeleton_path":"drawing_data/bear_skeleton.npy",
-    "segmask_config":{"D1_kernel":11, "D2_kernel":9, "D1_iter":2, "D2_iter":2},
+    "segmask_config":{"D1_kernel":13, "D2_kernel":7, "D1_iter":2, "D2_iter":2, "blockSize":11, "tolerance":8},
 }
 
 maoli = {
@@ -20,7 +20,7 @@ maoli = {
 shit = {
     "img_path":"drawing_data/shit.jpg",
     "skeleton_path":"drawing_data/shit_skeleton.npy",
-    "segmask_config":{"D1_kernel":7, "D1_iter":2, "D2_iter":0, "blockSize":15, "tolerance":1},
+    "segmask_config":{"D1_kernel":9, "D1_iter":2, "D2_iter":0, "blockSize":15, "tolerance":1},
 }
 
 stickman = {
