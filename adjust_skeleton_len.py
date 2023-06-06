@@ -52,7 +52,7 @@ class AdjustSkeletonLength:
 		'''
 		the theta is return in radians
 		'''
-		return math.atan((pt2[1]-pt1[1])/(pt2[0]-pt1[0]))
+		return math.atan((pt2[1]-pt1[1])/ (pt2[0]-pt1[0]))
 	
 	def adjust(self, pt1, pt2, draw_sk_length):
 		'''
@@ -70,6 +70,20 @@ class AdjustSkeletonLength:
 		y_prime = draw_sk_length * abs(math.sin(theta))
 		if pt1[1] > pt2[1]:
 			y_prime = -y_prime
+		adjusted_offset = np.array([x_prime, y_prime])
+		return pt1 + adjusted_offset, (pt1 + adjusted_offset) - pt2
+
+	def adjust_ear(self, pt1, pt2, draw_sk_length, LorR):	# LorR: left or right side, True for left
+		motion_theta = self.get_theta(pt1, pt2)
+		if LorR:
+			draw_theta = self.get_theta(self.draw_sk[16], self.draw_sk[18])
+			theta = motion_theta - math.pi + draw_theta + 25/180*math.pi
+		else:
+			draw_theta = self.get_theta(self.draw_sk[15], self.draw_sk[17])
+			theta = motion_theta + draw_theta - 25/180*math.pi
+		
+		x_prime = draw_sk_length * math.cos(theta)
+		y_prime = draw_sk_length * math.sin(theta)
 		adjusted_offset = np.array([x_prime, y_prime])
 		return pt1 + adjusted_offset, (pt1 + adjusted_offset) - pt2
 
@@ -98,9 +112,11 @@ class AdjustSkeletonLength:
 				frame_sk[[17,18]] += offset_head + offset_nose
 				frame_sk[[17]] += offset_l_eye
 				frame_sk[[18]] += offset_r_eye
-				frame_sk[17], offset = self.adjust(frame_sk[15], frame_sk[17], self.draw_sk_length[17])
-				frame_sk[18], offset = self.adjust(frame_sk[16], frame_sk[18], self.draw_sk_length[18])
-
+				frame_sk[17], offset = self.adjust_ear(frame_sk[15], frame_sk[17], self.draw_sk_length[17], False)
+				frame_sk[18], offset = self.adjust_ear(frame_sk[16], frame_sk[18], self.draw_sk_length[18], True)
+				# frame_sk[17], offset = self.adjust(frame_sk[15], frame_sk[17], self.draw_sk_length[17])
+				# frame_sk[18], offset = self.adjust(frame_sk[16], frame_sk[18], self.draw_sk_length[18])
+	
 			frame_sk[1], offset = self.adjust(frame_sk[2], frame_sk[1], self.draw_sk_length[1])
 			frame_sk[[4,6]] += offset
 			frame_sk[3], offset = self.adjust(frame_sk[2], frame_sk[3], self.draw_sk_length[2])
@@ -128,8 +144,8 @@ class AdjustSkeletonLength:
 
 
 if __name__ == "__main__":
-	from config import dragon_cat, bear, maoli, shit
-	model = bear
+	from config import dragon_cat, bear, maoli, shit, pig
+	model = pig
 	img_path = model["img_path"]
 	sk_path = model["skeleton_path"]
 	segmask_config = model["segmask_config"]
@@ -144,7 +160,7 @@ if __name__ == "__main__":
 
 	from target_motion import TargetMotion
 	targetMotion = TargetMotion(isDraw=False)
-	video_name = "target_motion_data/8.mp4"
+	video_name = "target_motion_data/11.mp4"
 	target_motion_vec = targetMotion.get_motion_vec(video_name, sk_pts=19)
 	origin = ((target_motion_vec[:, 2, :] + target_motion_vec[:, 9, :]) / 2).astype(np.int32)
 	origin = np.expand_dims(origin, axis=1)

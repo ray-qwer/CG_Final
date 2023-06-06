@@ -248,7 +248,8 @@ if __name__ == "__main__":
 																			"shit", 
 																			"stickman",
 																			"stickman1",
-																			"ghost"])
+																			"ghost",
+                                                                            "pig"])
     parser.add_argument("--showResult", type=bool, default=True)
     args = parser.parse_args()
     model = choose_drawing(args.fig)

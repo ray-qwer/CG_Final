@@ -117,8 +117,10 @@ if __name__ == "__main__":
     # ip = "drawing_data/maoli_lattice.jpg"
     # ip = "drawing_data/maoli_stripes.jpg"
     # ip = "drawing_data/shit.jpg"
-    ip = "drawing_data/ghost.jpg"
+    # ip = "drawing_data/ghost.jpg"
+    ip = "drawing_data/pig.jpg"
+
 
     segmentationMask = SegmentationMask(image_name=ip, isShowResult=True)
-    para = {"D1_kernel":11, "D1_iter":2, "D2_kernel":7, "D2_iter":1, "blockSize":49, "tolerance":2}
+    para = {"D1_kernel":3, "D1_iter":2, "D2_kernel":3, "D2_iter":1, "blockSize":25, "tolerance":2}
     result = segmentationMask.get_segmentation_mask(**para)
