@@ -234,21 +234,12 @@ class BFTriangle:
 
 
 if __name__ == "__main__":
-<<<<<<< HEAD
-    name = "ghost"
-=======
     name = "bear"
->>>>>>> main
     img_path = f"drawing_data/{name}.jpg"
     sk_path = f"drawing_data/{name}_skeleton.npy"
     seg = SegmentationMask(image_name=img_path, isShowResult=False)
     para = {"D1_kernel":11, "D1_iter":2, "D2_kernel":7, "D2_iter":1, "blockSize":49, "tolerance":2}
     seg_mask = seg.get_segmentation_mask(**para)
     tri = BFTriangle(img_path=img_path, seg_mask=seg_mask, skeleton_path=sk_path, strip=2)
-<<<<<<< HEAD
-    tri.show_result(show_dots=True)
-    print(tri.vertex_to_simplex().shape)
-=======
     print(tri.vertex_to_simplex().shape)
     tri._tri_label_with_joints()
->>>>>>> main
