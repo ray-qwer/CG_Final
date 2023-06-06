@@ -3,6 +3,9 @@ import numpy as np
 from matplotlib import pyplot as plt
 from scipy import ndimage
 from skimage import measure
+from PIL import Image, ImageTk, ImageDraw
+import io
+
 
 class SegmentationMask():
     def __init__(self, image_name, image=None, isBlur=True, isShowResult=False):
