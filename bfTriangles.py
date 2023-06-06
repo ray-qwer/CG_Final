@@ -7,6 +7,7 @@ from tqdm import tqdm
 from skimage.draw import polygon
 from skimage.feature import corner_harris, corner_peaks
 from skimage.measure import approximate_polygon
+from collections import deque
 
 """
     every point is keypoint...
@@ -60,6 +61,7 @@ class BFTriangle:
         
         # delaunay ttriangles
         self.get_delaunay_triangles(strip)
+        self._tri_label_with_joints()
 
     def get_delaunay_triangles(self, strip=1):
         # meshgrid
@@ -102,6 +104,7 @@ class BFTriangle:
         return np.all(self.seg_mask[centroid_4_dots[0], centroid_4_dots[1]] == True)
     
     def show_result(self, show_dots=False, returnResult=False):
+        """ show result with hierarchy """
         tri_color = np.zeros(self.img.shape, dtype=np.uint8)
         for idx, triangle in (enumerate(self.tri.simplices)):
             tri_vertices = self._keypnts[triangle][:,[1,0]]
@@ -114,7 +117,95 @@ class BFTriangle:
             if show_dots:
                 plt.scatter(self._keypnts[:,0], self._keypnts[:,1],c="r",s=1)
             plt.show()
+    def show_result_H(self, hierarchy=None, returnResult=True):
+        if hierarchy is None:
+            hierarchy = np.array([0, 15, 16, 17, 18, 2, 9, 8, 11, 13, 10, 12, 14, 1, 4, 6, 3, 5, 7])
+        assert len(hierarchy) == self.skeleton_pts.shape[0]
+        tri_color = np.zeros_like(self.img, dtype=np.uint8)
+        for i in hierarchy:
+            shading = np.where(self.tri_shading == i)[0]
+            for s in shading:
+                triangle = self.tri.simplices[s]
+                tri_vertices = self._keypnts[triangle][:, [1,0]]
+                i, j = polygon(tri_vertices[:,0], tri_vertices[:,1], self.img.shape)
+                tri_color[i, j] = self.tri_color[s]
+        if returnResult:
+            return tri_color
+        else:
+            plt.imshow(tri_color)
+            plt.show()
 
+    def _tri_label_with_joints(self, showResult=False):
+        """ bfs from joints """
+        self.vertex_to_simplex()    # to get all triangles' label
+        skeleton_tri = self._vertex_to_simplex[self.skeleton_pts[:,1], self.skeleton_pts[:,0]]
+        self.tri_shading = np.ones(len(self.tri.simplices), dtype=np.uint8)*(-1)
+
+        queue = deque()
+        visited = set()
+        
+        h, w = self.seg_mask.shape
+        print(h, w)
+        for idx, start_joint in enumerate(skeleton_tri):
+            queue.append(start_joint)
+            visited.add(start_joint)
+            self.tri_shading[start_joint] = idx
+        
+        while queue:
+            node = queue.popleft()
+
+            tri_neighbors = self.find_neighbors_triangle(node)
+
+            for neighbor in tri_neighbors:
+                if neighbor not in visited and neighbor >=0 and neighbor < len(self.tri.simplices):
+                    queue.append(neighbor)
+                    visited.add(neighbor)
+                    self.tri_shading[neighbor] = self.tri_shading[node]
+        
+        residual = np.where(self.tri_shading == -1)[0]
+        for i in residual:
+            # i is the simplices index
+            tri_neighbors = self.find_neighbors_triangle(i)
+
+            for neighbor in tri_neighbors:
+                if neighbor >=0 and neighbor < len(self.tri.simplices):
+                    self.tri_shading[i] = self.tri_shading[neighbor]
+                    continue
+
+        """ test shading """
+        if showResult:
+            tri_color = np.zeros(self.img.shape, dtype=np.uint8)
+            for idx in range(self.skeleton_pts.shape[0]):
+                shadings = self.tri.simplices[np.where(self.tri_shading == idx)]
+                color = (np.random.random(3)*256).astype(np.uint8)
+                for triangle in shadings:
+                    tri_vertices = self._keypnts[triangle][:,[1,0]]
+                    i, j = polygon(tri_vertices[:,0], tri_vertices[:,1], self.img.shape)
+                    tri_color[i, j] = color
+
+            plt.imshow(tri_color)
+            plt.show()
+
+    def find_neighbors_triangle(self, node):
+        """ this is an alternative function of delaunay.neighbors, because we have trimmed the triangles out of mask """
+        h, w, _ = self.img.shape
+        triangle = self.tri.simplices[node]
+        tri_vertices = self._keypnts[triangle][:, [1,0]]
+        tri_v_up   = tri_vertices - np.array([1,0])
+        tri_v_down = tri_vertices + np.array([1,0])
+        tri_v_left = tri_vertices - np.array([0,1])
+        tri_v_right= tri_vertices + np.array([0,1])
+        tri_directions = np.vstack((tri_v_up, tri_v_down, tri_v_right, tri_v_left))
+        tri_directions_y = tri_directions[:, 0]
+        tri_directions_y[tri_directions_y >= h] = h-1
+        tri_directions_y[tri_directions_y < 0] = 0
+        tri_directions_x = tri_directions[:, 1]
+        tri_directions_x[tri_directions_x >= w] = w-1
+        tri_directions_x[tri_directions_x < 0] = 0
+        tri_neighbors = self._vertex_to_simplex[tri_directions_y, tri_directions_x]
+        tri_neighbors = set(tuple(tri_neighbors))
+        return tri_neighbors
+    
     def vertex_to_simplex(self):
         """
             return a [H,W] size of numpy array, where each entry (pixel) indicates that 
@@ -143,12 +234,21 @@ class BFTriangle:
 
 
 if __name__ == "__main__":
+<<<<<<< HEAD
     name = "ghost"
+=======
+    name = "bear"
+>>>>>>> main
     img_path = f"drawing_data/{name}.jpg"
     sk_path = f"drawing_data/{name}_skeleton.npy"
     seg = SegmentationMask(image_name=img_path, isShowResult=False)
     para = {"D1_kernel":11, "D1_iter":2, "D2_kernel":7, "D2_iter":1, "blockSize":49, "tolerance":2}
     seg_mask = seg.get_segmentation_mask(**para)
     tri = BFTriangle(img_path=img_path, seg_mask=seg_mask, skeleton_path=sk_path, strip=2)
+<<<<<<< HEAD
     tri.show_result(show_dots=True)
     print(tri.vertex_to_simplex().shape)
+=======
+    print(tri.vertex_to_simplex().shape)
+    tri._tri_label_with_joints()
+>>>>>>> main

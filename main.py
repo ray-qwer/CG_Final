@@ -116,7 +116,7 @@ if __name__ == "__main__":
 		new_pins_xy = target_motion_vec_normalized[i] + skeleton_pts_origin + origin_offset[i]
 		new_vertices = arap.solve(new_pins_xy)
 		triangle._keypnts = new_vertices
-		frame_result = triangle.show_result(returnResult=True)
+		frame_result = triangle.show_result_H(returnResult=True)
 		output_video.append(frame_result)
 
 	#################################
