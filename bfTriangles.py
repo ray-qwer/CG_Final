@@ -19,15 +19,33 @@ class BFTriangle:
             strip: the interval size between each triangle vertex (or we should say keypoint)
         """
         self.img = cv2.imread(img_path)
-        # resize the image
-        H, W, _ = self.img.shape
-        scale = 512/H
-        self.img = cv2.resize(self.img,(int(W*scale), int(H*scale)), interpolation=cv2.INTER_AREA)
+
+        """
+        To ensure our drawing figure can move without exceeding the canvas boundaries,
+        we need to do padding to the canvas.
+        The size of padding can be controlled by 'hori_pad_size' and 'veri_pad_size'.
+        e.g. hori_pad_size = 0.2 means making the canvas become 1+(2*0.2) = 1.4 original width
+        """
+        hori_pad_size = 0.2
+        veri_pad_size = 0.15
+        H,W,C = self.img.shape
+        background_color = self.img[10,10,:]
+        img_padding = np.ones((int((1+2*veri_pad_size)*H), int((1+2*hori_pad_size)*W), 3), dtype=np.uint8) * background_color
+        img_padding[int(veri_pad_size*H):int((1+veri_pad_size)*H), int(hori_pad_size*W):int((1+hori_pad_size)*W), :] = self.img
+        self.img = img_padding
+
+        # rescale the input image: (H,W) -> (768, W')
+        H,W,C = self.img.shape
+        scale = 768 / H
+        H_prime, W_prime = (int(H*scale), int(W*scale))
+        self.img = cv2.resize(self.img, ((W_prime, H_prime)), interpolation=cv2.INTER_AREA)
+
         self.img_path = img_path
         
         # H and W
-        self.H = 512
-        self.W = int(W*scale)
+        H, W, _ = self.img.shape
+        self.H = H
+        self.W = W
 
         # mask
         self.seg_mask = seg_mask
@@ -125,10 +143,12 @@ class BFTriangle:
 
 
 if __name__ == "__main__":
-    name = "dragon_cat"
+    name = "ghost"
     img_path = f"drawing_data/{name}.jpg"
     sk_path = f"drawing_data/{name}_skeleton.npy"
     seg = SegmentationMask(image_name=img_path, isShowResult=False)
-    seg_mask = seg.get_segmentation_mask()
+    para = {"D1_kernel":11, "D1_iter":2, "D2_kernel":7, "D2_iter":1, "blockSize":49, "tolerance":2}
+    seg_mask = seg.get_segmentation_mask(**para)
     tri = BFTriangle(img_path=img_path, seg_mask=seg_mask, skeleton_path=sk_path, strip=2)
+    tri.show_result(show_dots=True)
     print(tri.vertex_to_simplex().shape)
