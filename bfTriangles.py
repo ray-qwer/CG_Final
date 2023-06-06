@@ -8,6 +8,8 @@ from skimage.draw import polygon
 from skimage.feature import corner_harris, corner_peaks
 from skimage.measure import approximate_polygon
 from collections import deque
+from config import *
+from argparse import ArgumentParser
 
 """
     every point is keypoint...
@@ -20,15 +22,33 @@ class BFTriangle:
             strip: the interval size between each triangle vertex (or we should say keypoint)
         """
         self.img = cv2.imread(img_path)
-        # resize the image
-        H, W, _ = self.img.shape
-        scale = 512/H
-        self.img = cv2.resize(self.img,(int(W*scale), int(H*scale)), interpolation=cv2.INTER_AREA)
+
+        """
+        To ensure our drawing figure can move without exceeding the canvas boundaries,
+        we need to do padding to the canvas.
+        The size of padding can be controlled by 'hori_pad_size' and 'veri_pad_size'.
+        e.g. hori_pad_size = 0.2 means making the canvas become 1+(2*0.2) = 1.4 original width
+        """
+        hori_pad_size = 0.2
+        veri_pad_size = 0.15
+        H,W,C = self.img.shape
+        background_color = self.img[10,10,:]
+        img_padding = np.ones((int((1+2*veri_pad_size)*H), int((1+2*hori_pad_size)*W), 3), dtype=np.uint8) * background_color
+        img_padding[int(veri_pad_size*H):int((1+veri_pad_size)*H), int(hori_pad_size*W):int((1+hori_pad_size)*W), :] = self.img
+        self.img = img_padding
+
+        # rescale the input image: (H,W) -> (768, W')
+        H,W,C = self.img.shape
+        scale = 768 / H
+        H_prime, W_prime = (int(H*scale), int(W*scale))
+        self.img = cv2.resize(self.img, ((W_prime, H_prime)), interpolation=cv2.INTER_AREA)
+
         self.img_path = img_path
         
         # H and W
-        self.H = 512
-        self.W = int(W*scale)
+        H, W, _ = self.img.shape
+        self.H = H
+        self.W = W
 
         # mask
         self.seg_mask = seg_mask
@@ -101,7 +121,12 @@ class BFTriangle:
             plt.show()
     def show_result_H(self, hierarchy=None, returnResult=True):
         if hierarchy is None:
-            hierarchy = np.array([0, 15, 16, 17, 18, 2, 9, 8, 11, 13, 10, 12, 14, 1, 4, 6, 3, 5, 7])
+            if self.skeleton_pts.shape[0] == 15:
+                hierarchy = np.array([0, 2, 9, 8, 11, 13, 10, 12, 14, 1, 4, 6, 3, 5, 7])
+            elif self.skeleton_pts.shape[0] == 17:
+                hierarchy = np.array([0, 15, 16, 2, 9, 8, 11, 13, 10, 12, 14, 1, 4, 6, 3, 5, 7])
+            elif self.skeleton_pts.shape[0] == 19:
+                hierarchy = np.array([0, 15, 16, 17, 18, 2, 9, 8, 11, 13, 10, 12, 14, 1, 4, 6, 3, 5, 7])
         assert len(hierarchy) == self.skeleton_pts.shape[0]
         tri_color = np.zeros_like(self.img, dtype=np.uint8)
         for i in hierarchy:
@@ -216,11 +241,22 @@ class BFTriangle:
 
 
 if __name__ == "__main__":
-    name = "bear"
-    img_path = f"drawing_data/{name}.jpg"
-    sk_path = f"drawing_data/{name}_skeleton.npy"
+    parser = ArgumentParser()
+    parser.add_argument("--fig", type=str, default="stickman1", choices=["dragon_cat", 
+																			"bear", 
+																			"maoli", 
+																			"shit", 
+																			"stickman",
+																			"stickman1",
+																			"ghost"])
+    parser.add_argument("--showResult", type=bool, default=True)
+    args = parser.parse_args()
+    model = choose_drawing(args.fig)
+    img_path = model["img_path"]
+    sk_path = model["skeleton_path"]
+    segmask_config = model["segmask_config"]
     seg = SegmentationMask(image_name=img_path, isShowResult=False)
-    seg_mask = seg.get_segmentation_mask()
+    seg_mask = seg.get_segmentation_mask(**segmask_config)
     tri = BFTriangle(img_path=img_path, seg_mask=seg_mask, skeleton_path=sk_path, strip=2)
     print(tri.vertex_to_simplex().shape)
-    tri._tri_label_with_joints()
+    fig = tri._tri_label_with_joints(args.showResult)
