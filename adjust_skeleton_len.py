@@ -79,7 +79,6 @@ class AdjustSkeletonLength:
 		input:
 			target_motion_vec: a [T,sk_pts,2] size numpy array, where T is the total frame number.
 		'''
-		assert (target_motion_vec.shape[1] == self.draw_sk.shape[0])
 		origins = ((target_motion_vec[:, 2] + target_motion_vec[:, 9]) / 2).astype(np.int32)
 		
 		for frameIdx, frame_sk in enumerate(target_motion_vec):
