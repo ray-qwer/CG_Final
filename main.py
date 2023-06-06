@@ -5,6 +5,7 @@ from label_skeleton import LabelingGUI
 from arap import ARAP
 from adjust_skeleton_len import AdjustSkeletonLength
 from config import *
+from manual_masking import MaskingTool
 
 from argparse import ArgumentParser
 import numpy as np
@@ -46,6 +47,15 @@ if __name__ == "__main__":
 	###############################
 	seg = SegmentationMask(image_name=img_path, isShowResult=False)
 	seg_mask = seg.get_segmentation_mask(**segmask_config)
+	ori_img = seg.img_ori
+
+	#################################
+	##	GUI for segMask refinement ##
+	#################################
+	window = tk.Tk()
+	masking_tool = MaskingTool(window, seg_mask, ori_img)
+	window.mainloop()
+	seg_mask = masking_tool.get_result()
 
 	###################################
 	##	calculate delaunay triangles ##
