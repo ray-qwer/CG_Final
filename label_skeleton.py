@@ -2,19 +2,36 @@ import tkinter as tk
 import numpy as np
 from PIL import Image, ImageTk
 import matplotlib.pyplot as plt
+import cv2
 
 class LabelingGUI:
     def __init__(self, master, image_path):
         self.image_name = image_path.replace(".jpg", "")
         image = Image.open(image_path)
         W,H = image.size
-        scale = 512 / H
-        canvas_width, canvas_height = int(W*scale), int(H*scale)
-        image = image.resize((int(W*scale), int(H*scale)), Image.ANTIALIAS)
+
+        """
+        To ensure our drawing figure can move without exceeding the canvas boundaries,
+        we need to do padding to the canvas.
+        The size of padding can be controlled by 'hori_pad_size' and 'veri_pad_size'.
+        e.g. hori_pad_size = 0.2 means making the canvas become 1+(2*0.2) = 1.4 original width
+        """
+        hori_pad_size = 0.2
+        veri_pad_size = 0.15
+        background_color = image.getpixel((10,10))
+        img_padding = np.ones((int((1+2*veri_pad_size)*H), int((1+2*hori_pad_size)*W), 3), dtype=np.uint8) * background_color
+        img_padding[int(veri_pad_size*H):int((1+veri_pad_size)*H), int(hori_pad_size*W):int((1+hori_pad_size)*W), :] = image
+        image = Image.fromarray(img_padding.astype(np.uint8))
+
+        # rescale the input image: (H,W) -> (768, W')
+        W,H = image.size
+        scale = 768/H
+        H_prime, W_prime = (int(H*scale), int(W*scale))
+        image = image.resize((W_prime, H_prime), Image.ANTIALIAS)
         self.image = image
 
         self.master = master
-        self.canvas = tk.Canvas(self.master, width=canvas_width, height=canvas_height)
+        self.canvas = tk.Canvas(self.master, width=W_prime, height=H_prime)
         self.canvas.pack()
         self.points = []
         self.point_entries = []
@@ -60,7 +77,7 @@ class LabelingGUI:
                 break
 
     def save_points(self):
-        if len(self.points) == 15:
+        if len(self.points) >= 15:
             labeled_points = []
             for i, point in enumerate(self.points):
                 try:
@@ -74,16 +91,22 @@ class LabelingGUI:
             np.save(f"{self.image_name}_skeleton", self.labeled_points_array)
             print("Label points saved successfully!")
         else:
-            print("Please label exactly 15 points before saving.")
+            print("Please label at least 15 points before saving.")
 
     def get_labels(self):
         return self.labeled_points_array
     
-    def check_skeletal(self, npy_path=None):
+    def check_skeletal(self, npy_path=None, new_labeled_points=None, isSwapXY=False):
         if npy_path != None:
             pts = np.load(npy_path)
-        else:
+        elif np.array(new_labeled_points).any() == None:
             pts = self.labeled_points_array
+        else:
+            pts = new_labeled_points
+
+        if isSwapXY:
+            pts = pts[:, [1,0]]
+
         # plot skeleton edges
         plt.plot([pts[0,0], pts[2,0]], [pts[0,1], pts[2,1]], color="red", linewidth=3)
         plt.plot([pts[1,0], pts[2,0]], [pts[1,1], pts[2,1]], color="red", linewidth=3)
@@ -99,6 +122,12 @@ class LabelingGUI:
         plt.plot([pts[11,0], pts[13,0]], [pts[11,1], pts[13,1]], color="red", linewidth=3)
         plt.plot([pts[10,0], pts[12,0]], [pts[10,1], pts[12,1]], color="red", linewidth=3)
         plt.plot([pts[12,0], pts[14,0]], [pts[12,1], pts[14,1]], color="red", linewidth=3)
+        if len(pts) > 15:
+            plt.plot([pts[0,0], pts[15,0]], [pts[0,1], pts[15,1]], color="red", linewidth=3)
+            plt.plot([pts[0,0], pts[16,0]], [pts[0,1], pts[16,1]], color="red", linewidth=3)
+        if len(pts) > 17:
+            plt.plot([pts[15,0], pts[17,0]], [pts[15,1], pts[17,1]], color="red", linewidth=3)
+            plt.plot([pts[16,0], pts[18,0]], [pts[16,1], pts[18,1]], color="red", linewidth=3)
         # plot skeleton points
         for i in range(len(pts)):
             plt.plot(pts[i,0], pts[i,1], marker="o", color="blue")
@@ -107,8 +136,8 @@ class LabelingGUI:
 
 
 if __name__ == '__main__':
-    # image_path = "drawing_data/dragon_cat.jpg"  
-    image_path = "drawing_data/bear.jpg" 
+    name = "bear"
+    image_path = f"drawing_data/{name}.jpg"  
     root = tk.Tk()
     gui = LabelingGUI(root, image_path)
     root.mainloop()
@@ -122,12 +151,12 @@ if __name__ == '__main__':
     '''
     # to load the previously labeled [15, 2] size numpy array, without manually label again:
     '''
-    # gui.check_skeletal(npy_path="drawing_data/dragon_cat_skeleton.npy")
-    gui.check_skeletal(npy_path="drawing_data/bear_skeleton.npy")
+    gui.check_skeletal(npy_path=f"drawing_data/{name}_skeleton.npy")
+    # gui.check_skeletal(npy_path="drawing_data/bear_skeleton.npy")
 
 
     '''
     to load the skeleton.npy ONLY:
     '''
-    skeleton_pts = np.load("drawing_data/dragon_cat_skeleton.npy") # a [15, 2] size numpy array
+    skeleton_pts = np.load(f"drawing_data/{name}_skeleton.npy") # a [15, 2] size numpy array
     print(skeleton_pts)
