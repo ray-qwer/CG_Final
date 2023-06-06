@@ -119,7 +119,12 @@ class BFTriangle:
             plt.show()
     def show_result_H(self, hierarchy=None, returnResult=True):
         if hierarchy is None:
-            hierarchy = np.array([0, 15, 16, 17, 18, 2, 9, 8, 11, 13, 10, 12, 14, 1, 4, 6, 3, 5, 7])
+            if self.skeleton_pts.shape[0] == 15:
+                hierarchy = np.array([0, 2, 9, 8, 11, 13, 10, 12, 14, 1, 4, 6, 3, 5, 7])
+            elif self.skeleton_pts.shape[0] == 17:
+                hierarchy = np.array([0, 15, 16, 2, 9, 8, 11, 13, 10, 12, 14, 1, 4, 6, 3, 5, 7])
+            elif self.skeleton_pts.shape[0] == 19:
+                hierarchy = np.array([0, 15, 16, 17, 18, 2, 9, 8, 11, 13, 10, 12, 14, 1, 4, 6, 3, 5, 7])
         assert len(hierarchy) == self.skeleton_pts.shape[0]
         tri_color = np.zeros_like(self.img, dtype=np.uint8)
         for i in hierarchy:

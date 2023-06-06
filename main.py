@@ -36,6 +36,7 @@ if __name__ == "__main__":
 	parser.add_argument("--motion", type=str, default="8") # see line 68
 	parser.add_argument("--strip", type=int, default=4) # see line 59
 	parser.add_argument("--output", type=str, default="output/test_output.mp4") # see line 112
+	parser.add_argument("--sk_pts", type=int, default=15) # see line 112
 	args = parser.parse_args()
 	out_name = args.output.split("/")
 	if len(out_name)>1:
@@ -59,7 +60,7 @@ if __name__ == "__main__":
 	##	calculate delaunay triangles ##
 	###################################
 	triangle = BFTriangle(img_path=img_path, seg_mask=seg_mask, skeleton_path=sk_path, strip=args.strip, isShowResult=False)
-	drawing_skeleton_pts = triangle.skeleton_pts
+	drawing_skeleton_pts = triangle.skeleton_pts[:args.sk_pts]
 	vertices = triangle._keypnts
 	triangles = triangle.tri.simplices
 
@@ -68,7 +69,7 @@ if __name__ == "__main__":
 	##################################
 	targetMotion = TargetMotion(isDraw=False)
 	video_name = f"target_motion_data/{args.motion}.mp4"
-	target_motion_vec = targetMotion.get_motion_vec(video_name, sk_pts=19)
+	target_motion_vec = targetMotion.get_motion_vec(video_name, sk_pts=args.sk_pts)
 
 	##################################
 	##	adjust skeleton length of 	##
