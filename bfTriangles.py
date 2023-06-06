@@ -8,6 +8,8 @@ from skimage.draw import polygon
 from skimage.feature import corner_harris, corner_peaks
 from skimage.measure import approximate_polygon
 from collections import deque
+from config import *
+from argparse import ArgumentParser
 
 """
     every point is keypoint...
@@ -239,12 +241,22 @@ class BFTriangle:
 
 
 if __name__ == "__main__":
-    name = "bear"
-    img_path = f"drawing_data/{name}.jpg"
-    sk_path = f"drawing_data/{name}_skeleton.npy"
+    parser = ArgumentParser()
+    parser.add_argument("--fig", type=str, default="stickman1", choices=["dragon_cat", 
+																			"bear", 
+																			"maoli", 
+																			"shit", 
+																			"stickman",
+																			"stickman1",
+																			"ghost"])
+    parser.add_argument("--showResult", type=bool, default=True)
+    args = parser.parse_args()
+    model = choose_drawing(args.fig)
+    img_path = model["img_path"]
+    sk_path = model["skeleton_path"]
+    segmask_config = model["segmask_config"]
     seg = SegmentationMask(image_name=img_path, isShowResult=False)
-    para = {"D1_kernel":11, "D1_iter":2, "D2_kernel":7, "D2_iter":1, "blockSize":49, "tolerance":2}
-    seg_mask = seg.get_segmentation_mask(**para)
+    seg_mask = seg.get_segmentation_mask(**segmask_config)
     tri = BFTriangle(img_path=img_path, seg_mask=seg_mask, skeleton_path=sk_path, strip=2)
     print(tri.vertex_to_simplex().shape)
-    tri._tri_label_with_joints()
+    fig = tri._tri_label_with_joints(args.showResult)

@@ -40,3 +40,13 @@ ghost = {
     "skeleton_path":"drawing_data/ghost_skeleton.npy",
     "segmask_config":{"D1_kernel":11, "D1_iter":2, "D2_kernel":7, "D2_iter":1, "blockSize":49, "tolerance":2},
 }
+
+def choose_drawing(name):	
+	table = {"dragon_cat": dragon_cat,
+	  		 "bear": bear,
+			 "maoli": maoli,
+			 "shit": shit,
+			 "stickman": stickman,
+			 "stickman1": stickman1,
+			 "ghost": ghost,}
+	return table[name]

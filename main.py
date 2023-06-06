@@ -13,15 +13,6 @@ import matplotlib.pyplot as plt
 import tkinter as tk
 import os
 
-def choose_drawing(name):	
-	table = {"dragon_cat": dragon_cat,
-	  		 "bear": bear,
-			 "maoli": maoli,
-			 "shit": shit,
-			 "stickman": stickman,
-			 "stickman1": stickman1,
-			 "ghost": ghost,}
-	return table[name]
 
 if __name__ == "__main__":
 	parser = ArgumentParser()
