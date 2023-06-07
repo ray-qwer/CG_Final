@@ -13,7 +13,7 @@ import cv2
 import matplotlib.pyplot as plt
 import tkinter as tk
 import os
-from delaunay import DelaunayTriangles
+
 
 if __name__ == "__main__":
 	parser = ArgumentParser()
@@ -54,8 +54,7 @@ if __name__ == "__main__":
 	###################################
 	##	calculate delaunay triangles ##
 	###################################
-	triangle = DelaunayTriangles(img_path=img_path, SegMask=seg_mask,skeleton_path=sk_path,sampling=2)
-	# triangle = BFTriangle(img_path=img_path, seg_mask=seg_mask, skeleton_path=sk_path, strip=args.strip, isShowResult=False)
+	triangle = BFTriangle(img_path=img_path, seg_mask=seg_mask, skeleton_path=sk_path, strip=args.strip, isShowResult=False)
 	drawing_skeleton_pts = triangle.skeleton_pts[:args.sk_pts]
 	vertices = triangle._keypnts
 	triangles = triangle.tri.simplices
