@@ -36,9 +36,12 @@ where:
 > For more detail of args, please see ```modify_video_background.py```.
 
 ## Example Result
-1. (drawing) stickman1 + (motion)   
-<img src="./asset/stickman1.jpg" width="220" height="300">
-<img src="./asset/result1.gif" width="300" height="500">
+| drawing | motion retargeted video |
+| ------- | ----------------------- |
+|<img src="./asset/stickman1.jpg" width="200" height="280">|<img src="./asset/2_bg.gif" width="300" height="500">|
+|<img src="./asset/pig.jpg" width="200" height="280">|<img src="./asset/result3.gif" width="300" height="500">|
+|<img src="./asset/stickman1.jpg" width="200" height="280">|<img src="./asset/result1.gif" width="300" height="500">|
+
 
 
 ## References
