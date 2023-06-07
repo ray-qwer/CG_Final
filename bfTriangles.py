@@ -140,6 +140,13 @@ class BFTriangle:
             return tri_color
         else:
             plt.imshow(tri_color)
+            for tri in self.tri.simplices:
+                t1, t2, t3 = tri
+                plt.plot([self._keypnts[t1][0], self._keypnts[t2][0]], [self._keypnts[t1][1], self._keypnts[t2][1]], color="blue", linewidth=1)
+                plt.plot([self._keypnts[t1][0], self._keypnts[t3][0]], [self._keypnts[t1][1], self._keypnts[t3][1]], color="blue", linewidth=1)
+                plt.plot([self._keypnts[t2][0], self._keypnts[t3][0]], [self._keypnts[t2][1], self._keypnts[t3][1]], color="blue", linewidth=1)
+
+            plt.scatter(self._keypnts[:,0], self._keypnts[:,1],c="r",s=1)
             plt.show()
 
     def _tri_label_with_joints(self, showResult=False):
@@ -261,3 +268,4 @@ if __name__ == "__main__":
     tri = BFTriangle(img_path=img_path, seg_mask=seg_mask, skeleton_path=sk_path, strip=2)
     print(tri.vertex_to_simplex().shape)
     fig = tri._tri_label_with_joints(args.showResult)
+    frame_result = tri.show_result_H(returnResult=False)
