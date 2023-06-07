@@ -2,7 +2,8 @@
 
 ## Description
 We re-implemented and modified the paper "A Method for Animating Children's Drawings of the Human Figure" (SIGGRAPH 2023) as our final project.
-This project is written in python, feel free to fork and play with yourself!
+This project is written in python, feel free to fork and play with yourself!  
+For more, please check out our demo slide: [link](https://docs.google.com/presentation/d/1H1I1fWN3nPmaxl5HXqvA2ABLq2Eaix3LMbHgJhncGrc/edit#slide=id.p)
 
 ## Member
 we are from NTU GICE DISP Lab (台大電信所R11)
