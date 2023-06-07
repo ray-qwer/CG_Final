@@ -118,7 +118,7 @@ if __name__ == "__main__":
     # ip = "drawing_data/maoli_stripes.jpg"
     # ip = "drawing_data/shit.jpg"
     # ip = "drawing_data/ghost.jpg"
-    ip = "drawing_data/pig.jpg"
+    ip = "drawing_data/dust.jpg"
 
 
     segmentationMask = SegmentationMask(image_name=ip, isShowResult=True)

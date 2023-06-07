@@ -47,6 +47,20 @@ pig = {
 	"segmask_config":{"D1_kernel":3, "D1_iter":2, "D2_kernel":3, "D2_iter":1, "blockSize":25, "tolerance":2},
 }
 
+pig2 = {
+	"img_path":"drawing_data/pig2.jpg",
+	"skeleton_path":"drawing_data/pig2_skeleton.npy",
+	"segmask_config":{"D1_kernel":3, "D1_iter":2, "D2_kernel":3, "D2_iter":1, "blockSize":25, "tolerance":2},
+}
+
+dust = {
+	"img_path":"drawing_data/dust.jpg",
+	"skeleton_path":"drawing_data/dust_skeleton.npy",
+	"segmask_config":{"D1_kernel":3, "D1_iter":2, "D2_kernel":3, "D2_iter":1, "blockSize":25, "tolerance":2},
+}
+
+fig_choices = ["dragon_cat", "bear", "maoli", "shit", "stickman","stickman1","ghost","pig","pig2","dust"]
+
 def choose_drawing(name):	
 	table = {"dragon_cat": dragon_cat,
 	  		 "bear": bear,
@@ -55,5 +69,7 @@ def choose_drawing(name):
 			 "stickman": stickman,
 			 "stickman1": stickman1,
 			 "ghost": ghost,
-	         "pig": pig}
+	         "pig": pig,
+	         "pig2": pig2,
+	         "dust": dust}
 	return table[name]

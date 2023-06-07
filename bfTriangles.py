@@ -249,14 +249,7 @@ class BFTriangle:
 
 if __name__ == "__main__":
     parser = ArgumentParser()
-    parser.add_argument("--fig", type=str, default="stickman1", choices=["dragon_cat", 
-																			"bear", 
-																			"maoli", 
-																			"shit", 
-																			"stickman",
-																			"stickman1",
-																			"ghost",
-                                                                            "pig"])
+    parser.add_argument("--fig", type=str, default="stickman1", choices=fig_choices)
     parser.add_argument("--showResult", type=bool, default=True)
     args = parser.parse_args()
     model = choose_drawing(args.fig)

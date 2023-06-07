@@ -7,7 +7,8 @@ from tqdm import tqdm
 from skimage.draw import polygon
 from skimage.feature import corner_harris, corner_peaks
 from skimage.measure import approximate_polygon
-
+from config import *
+from argparse import ArgumentParser
 
 """
 steps:
@@ -23,17 +24,25 @@ Delaunay documents: https://docs.scipy.org/doc/scipy/reference/generated/scipy.s
 """
 
 class DelaunayTriangles:
-    def __init__(self, img_path, skeleton_path="", isShowResult=True, ):
+    def __init__(self, img_path, SegMask, skeleton_path="", isShowResult=True, sampling=5):
         
         self.img_ori = cv2.imread(img_path)
+        
+        # padding
+        hori_pad_size = 0.2
+        veri_pad_size = 0.15
+        H,W,C = self.img_ori.shape
+        background_color = self.img_ori[10,10,:]
+        img_padding = np.ones((int((1+2*veri_pad_size)*H), int((1+2*hori_pad_size)*W), 3), dtype=np.uint8) * background_color
+        img_padding[int(veri_pad_size*H):int((1+veri_pad_size)*H), int(hori_pad_size*W):int((1+hori_pad_size)*W), :] = self.img_ori
+        self.img_ori = img_padding
 
         H, W, _ = self.img_ori.shape
-        scale = 512 / H
+        scale = 768 / H
         self.img_ori = cv2.resize(self.img_ori,(int(W*scale), int(H*scale)), interpolation=cv2.INTER_AREA)
         self.img_path = img_path
         
-        segmentationMask = SegmentationMask(image_name = img_path, isShowResult=False)
-        self.SegMask = segmentationMask.get_segmentation_mask()
+        self.SegMask = SegMask
 
         self.isShowResult = isShowResult
         if skeleton_path != "":
@@ -42,7 +51,8 @@ class DelaunayTriangles:
         else:
             self.skeleton_pts = np.zeros((0,2))
 
-        self.get_delaunay_triangles() 
+        self.sampling = sampling
+        self.get_delaunay_triangles(sampling=self.sampling) 
 
     def _get_polygon_contour_from_mask(self, tol=0.0001):
         """
@@ -104,17 +114,24 @@ class DelaunayTriangles:
                                 [centroid[1], centroid[1]+1, centroid[1], centroid[1]+1]]).astype(int)
         return np.all(self.SegMask[centroid_4_dots[0], centroid_4_dots[1]] == True)
         
-    def show_result(self,):
+    def show_result(self, save_path="", returnResult=True):
         tri_color = np.zeros(self.img_ori.shape, dtype=np.uint8)
         for idx, triangle in (enumerate(self.tri.simplices)):
             tri_vertices = self._keypnts[triangle]
             i, j = polygon(tri_vertices[:,0], tri_vertices[:,1], self.img_ori.shape)
             tri_color[i, j] = self.tri_color[idx]
-        plt.imshow(tri_color)
-        plt.scatter(self._keypnts[:,1], self._keypnts[:,0],c="r",s=1)
-        plt.show()
+        
+        if returnResult:
+            return tri_color
+        else:
+            plt.imshow(tri_color)
+            # plt.scatter(self._keypnts[:,1], self._keypnts[:,0],c="r",s=1)
+            plt.show()
 
-    def get_delaunay_triangles(self):
+        if save_path != "":
+            cv2.imwrite(save_path, tri_color)
+
+    def get_delaunay_triangles(self, sampling=5):
         """
             main function
         """
@@ -122,7 +139,7 @@ class DelaunayTriangles:
         self._erosed_mask = self._get_erosed_mask(kernelSize=5, iterations=3)
         self._corner_pnts = self._get_corner_pnts()         # return (n, 2), n is the detected corners 
         self._edge_pnts = self._get_edge_pnts()
-        self._keypnts = self._get_keypnts()
+        self._keypnts = self._get_keypnts(sampling)
 
         self.tri = Delaunay(self._keypnts)
         tri_in_mask = []
@@ -163,11 +180,19 @@ class DelaunayTriangles:
 
 if __name__ == "__main__":
     # img_path = "drawing_data/dragon_cat.jpg"
-    name = "dragon_cat"
-    # name = "bear"
-    img_path = f"drawing_data/{name}.jpg"
-    sk_path = f"drawing_data/{name}_skeleton.npy"
-    delaunay = DelaunayTriangles(img_path, sk_path, True)
+    parser = ArgumentParser()
+    parser.add_argument("--fig", type=str, default="stickman1", choices=fig_choices)
+    parser.add_argument("--save_path", type=str, default="")
+    parser.add_argument("--ratio", type=int, default=5)
+    args = parser.parse_args()
+    model = choose_drawing(args.fig)
+    img_path = model["img_path"]
+    sk_path = model["skeleton_path"]
+    segmask_config = model["segmask_config"]
+    seg = SegmentationMask(image_name=img_path, isShowResult=False)
+    seg_mask = seg.get_segmentation_mask(**segmask_config)
+    delaunay = DelaunayTriangles(img_path=img_path, SegMask=seg_mask, skeleton_path=sk_path, sampling=args.ratio, isShowResult=False)
+    delaunay.show_result(save_path = args.save_path)
     # examples of how to access information from delaunay
     # get class Delaunay()
     tri = delaunay.tri
