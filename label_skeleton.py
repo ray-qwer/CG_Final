@@ -136,7 +136,7 @@ class LabelingGUI:
 
 
 if __name__ == '__main__':
-    name = "bear"
+    name = "dust"
     image_path = f"drawing_data/{name}.jpg"  
     root = tk.Tk()
     gui = LabelingGUI(root, image_path)

@@ -8,11 +8,15 @@ import copy
 class MaskingTool:
     def __init__(self, master, init_mask, ori_img):
         self.master = master
-        self.canvas = tk.Canvas(self.master, width=572, height=768)
-        self.canvas.pack()
-
+        
+        # image and mask have been resized before
         self.image = ori_img.astype(np.uint8)
         self.init_mask = init_mask.astype(np.uint8)
+        
+        # the width and height of canvas are controlled by image
+        self.canvas = tk.Canvas(self.master, width=self.image.shape[1], height=self.image.shape[0])
+        self.canvas.pack()
+
         self.masked_image = None
         self.masking = True
 
@@ -23,6 +27,9 @@ class MaskingTool:
 
         self.close_button = tk.Button(self.master, text="開始還原", command=self.stop_masking)
         self.close_button.pack()
+
+        self.complete_button = tk.Button(self.master, text="完成", command=self.complete)
+        self.complete_button.pack()
 
         self.canvas.bind("<B1-Motion>", self.on_mouse_drag)
 
@@ -64,7 +71,11 @@ class MaskingTool:
 
     def get_result(self):
         return self.mask_points
-
+    
+    def complete(self):
+        print("已儲存")
+        self.master.destroy()
+        
 if __name__ == "__main__":
     # Create the main window
     window = tk.Tk()
